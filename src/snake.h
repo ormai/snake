@@ -19,7 +19,7 @@ typedef struct node {
 typedef struct snake {
   unsigned length; // Also the score
 
-  Node *head, *tail, *oldHead;
+  Node *head, *tail;
 
   Direction direction; // Current direction
 } Snake;
@@ -30,17 +30,14 @@ void destroyNode(Node *self);
 Snake *newSnake(const Point mapCenter, Direction direction);
 void destroySnake(Snake *self);
 
-void move();
-
-bool collided();
-
 // Move the snake one cell forward in the current direction
-void advance(Snake *self);
+// Returns the old tail
+Node *advance(Snake *self);
 
 void changeDirection(Snake *self, Direction direction);
 
 // Add a Node to the Snake
-void grow(Snake *self);
+void grow(Snake *self, Node *oldTail);
 
 #endif // !SNAKE_H
 

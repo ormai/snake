@@ -1,7 +1,7 @@
-#include "snake.h"
+#include <stdio.h>
 #include <stdlib.h>
 
-// ██
+#include "snake.h"
 
 Node *newNode(const Point pos, Node *prev) {
   Node *self = malloc(sizeof(Node));
@@ -39,40 +39,36 @@ void destroySnake(Snake *self) {
   }
 }
 
-void advance(Snake *self) {
+Node *advance(Snake *self) {
+  // Copy the position of the current head
+  Point newHeadPosition = {self->head->x, self->head->y};
 
+  // Move it forward in the current direction
   switch (self->direction) {
   case NORTH:
-    --self->head->y;
+    --newHeadPosition.y;
     break;
   case EAST:
-    ++self->head->x;
+    ++newHeadPosition.x;
     break;
   case SOUTH:
-    ++self->head->y;
+    ++newHeadPosition.y;
     break;
   case WEST:
-    --self->head->x;
+    --newHeadPosition.x;
     break;
   }
 
-  // Point oldHead = (Point){self->head->x, self->head->y};
-  self->oldHead = self->head;
+  // Push new head
+  self->head->next = newNode(newHeadPosition, self->head);
+  self->head = self->head->next;
 
-  Point prev2;
-  Node *iter = self->head->next;
-  while (iter != NULL) {
-    prev2.x = iter->x;
-    prev2.y = iter->y;
+  // Pop the tail
+  Node *oldTail = self->tail;
+  self->tail = self->tail->next;
+  self->tail->prev = NULL;
 
-    iter->x = self->oldHead->x;
-    iter->y = self->oldHead->y;
-
-    self->oldHead->x = prev2.x;
-    self->oldHead->y = prev2.y;
-
-    iter = iter->next;
-  }
+  return oldTail;
 }
 
 void changeDirection(Snake *self, Direction direction) {
@@ -83,16 +79,17 @@ void changeDirection(Snake *self, Direction direction) {
   //    { NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3 }
   // There is a distance of 2 between directions that lie on the same axis.
   // WEST + 1 is the number of directions.
-  if (direction == self->direction ||
-      direction == (self->direction + 2) % WEST + 1)
-    return;
+
+  // if (direction == self->direction ||
+  //     direction == (self->direction + 2) % WEST + 1)
+  //   return;
 
   self->direction = direction;
 }
 
-void grow(Snake *self) {
-  self->tail->next =
-      newNode((Point){self->oldHead->x, self->oldHead->y}, self->tail);
+void grow(Snake *self, Node *oldTail) {
+  oldTail->next = self->tail;
+  self->tail = oldTail;
 
   ++self->length;
 }
