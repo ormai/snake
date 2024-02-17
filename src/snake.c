@@ -19,10 +19,10 @@ void destroyNode(Node *self) {
     free(self);
 }
 
-Snake *newSnake(const Point mapCenter, Direction direction) {
+Snake *newSnake(const Point mapCenter) {
   Snake *self = malloc(sizeof(Snake));
   self->tail = self->head = newNode(mapCenter, NULL);
-  self->direction = direction;
+  self->direction = rand() % WEST;
   self->length = 1;
   return self;
 }
@@ -37,6 +37,14 @@ void destroySnake(Snake *self) {
     }
     free(self);
   }
+}
+
+bool selfCollision(const Snake *self) {
+  for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
+    for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev)
+      if (it1->x == it2->x && it1->y == it2->y)
+        return true;
+  return false;
 }
 
 Node *advance(Snake *self) {
@@ -75,14 +83,10 @@ void changeDirection(Snake *self, Direction direction) {
   // The left hand side of the || is clear, while the right hand side checks
   // that the direction doesn't go from SOUTH to NORTH or vice versa and from
   // EAST to WEST and vice versa.
-  // The enum type for the Direction enumerates as follow:
-  //    { NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3 }
-  // There is a distance of 2 between directions that lie on the same axis.
-  // WEST + 1 is the number of directions.
 
-  // if (direction == self->direction ||
-  //     direction == (self->direction + 2) % WEST + 1)
-  //   return;
+  if (direction == self->direction ||
+      self->length > 1 && direction == (self->direction + 2) % (WEST + 1))
+    return;
 
   self->direction = direction;
 }

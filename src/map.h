@@ -24,14 +24,16 @@ typedef struct map {
   Point orb; // The orb to capture
 } Map;
 
-Map *newMap(const unsigned width, const unsigned height);
+Map *newMap(void);
 void destroyMap(Map *self);
+
+void initializeNcurses(void);
 
 // Spawn a new orb
 void spawnOrb(Map *self);
 
 // Check for collisions
-bool collision(const Map *self, const Snake *snake);
+bool borders(const Map *self, const Snake *snake);
 
 void drawWalls(const Map *self);
 
@@ -40,5 +42,7 @@ void draw(const Map *self, const Snake *snake, bool growing,
           const Node *oldTail);
 
 void updateScore(const Map *self, const unsigned score);
+
+bool gameOver(Map *self, Snake *snake);
 
 #endif // !MAP_H

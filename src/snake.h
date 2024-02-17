@@ -27,7 +27,7 @@ typedef struct snake {
 Node *newNode(const Point pos, Node *prev);
 void destroyNode(Node *self);
 
-Snake *newSnake(const Point mapCenter, Direction direction);
+Snake *newSnake(const Point mapCenter);
 void destroySnake(Snake *self);
 
 // Move the snake one cell forward in the current direction
@@ -38,6 +38,9 @@ void changeDirection(Snake *self, Direction direction);
 
 // Add a Node to the Snake
 void grow(Snake *self, Node *oldTail);
+
+// Check if the Snake touches itself
+bool selfCollision(const Snake *self);
 
 #endif // !SNAKE_H
 
