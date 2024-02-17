@@ -1,3 +1,5 @@
+// vim:filetype=c
+
 #ifndef MAP_H
 #define MAP_H
 
@@ -7,8 +9,17 @@
 #include "snake.h"
 
 typedef struct map {
-  unsigned width, height;
-  bool *grid;
+  int screenWidth, screenHeight;
+  int width, height; // The map occupies a fraction of the screen
+
+  // An offset from the top-left corner to apply to all coordinates
+  // in order to center the map
+  Point offset;
+
+  bool *grid; // Keep track of the occupied cells. Useful when generating orbs.
+  // grid will represent the map which is a 2D surface, but the constructor
+  // allocates a 1D array of size width * height.
+  // To subscript such an array i * width + j is used.
 
   Point orb; // The orb to capture
 } Map;
@@ -17,11 +28,17 @@ Map *newMap(const unsigned width, const unsigned height);
 void destroyMap(Map *self);
 
 // Spawn a new orb
-void newOrb(Map *self);
+void spawnOrb(Map *self);
 
 // Check for collisions
 bool collision(const Map *self, const Snake *snake);
 
-void draw(const Map *self, const Snake *snake);
+void drawWalls(const Map *self);
+
+// Draw the Snake on to the Map
+void draw(const Map *self, const Snake *snake, bool growing,
+          const Node *oldTail);
+
+void updateScore(const Map *self, const unsigned score);
 
 #endif // !MAP_H
