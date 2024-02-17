@@ -4,16 +4,16 @@
 
 #include "map.h"
 
-Map *newMap(const unsigned screenWidth, const unsigned screenHeight) {
+Map *newMap(void) {
   Map *self = malloc(sizeof(Map));
 
-  self->screenWidth = screenWidth;
-  self->screenHeight = screenHeight;
-  self->width = screenWidth / 4;
-  self->height = screenHeight * 2 / 3;
+  self->screenWidth = getmaxx(stdscr) - 1;
+  self->screenHeight = getmaxy(stdscr) - 1;
+  self->width = self->screenWidth / 4;
+  self->height = self->screenHeight * 2 / 3;
 
-  self->offset = (Point){(screenWidth - self->width * 2) / 2,
-                         (screenHeight - self->height) / 2};
+  self->offset = (Point){(self->screenWidth - self->width * 2) / 2,
+                         (self->screenHeight - self->height) / 2};
 
   self->grid = calloc(self->width * self->height, sizeof(bool));
   spawnOrb(self);
@@ -29,21 +29,24 @@ void destroyMap(Map *self) {
   }
 }
 
+void initializeNcurses(void) {
+  initscr();
+  cbreak(); // Disable keybord input buffering, keys are immediately evaluated
+  noecho(); // Disabl echoing for getch()
+  intrflush(stdscr, false); // Flush the tty on quit
+  keypad(stdscr, true);     // Enable keypad for the arrow keys
+  nodelay(stdscr, true);    // getch() doesn't wait for input
+  curs_set(0);              // Make the cursor invisible
+  start_color();            // Have some colors
+  use_default_colors();
+}
+
 // Take an x coordinate and transate it for the screen
 static int translate(int x) { return x + x + 1; }
 
-bool collision(const Map *self, const Snake *snake) {
-  if (snake->head->x > self->width || snake->head->x < 0 ||
-      snake->head->y > self->height || snake->head->y < 0)
-    return true;
-
-  // Self-collision of the snake
-  for (Node *it1 = snake->head; it1 != NULL; it1 = it1->next)
-    for (Node *it2 = it1->next; it2 != NULL; it2 = it2->next)
-      if (it1->x == it2->x && it1->y == it2->y)
-        return true;
-
-  return false;
+bool borders(const Map *self, const Snake *snake) {
+  return snake->head->x <= self->width && snake->head->x >= 0 &&
+         snake->head->y <= self->height && snake->head->y >= 0;
 }
 
 void spawnOrb(Map *self) {
@@ -95,5 +98,44 @@ void draw(const Map *self, const Snake *snake, const bool growing,
     mvprintw(oldTail->y + self->offset.y,
              translate(oldTail->x) + self->offset.x, "  ");
     self->grid[oldTail->y * self->width + snake->head->x] = false;
+  }
+}
+
+bool gameOver(Map *self, Snake *snake) {
+  const char *fmt[] = {
+      "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+      "┃   _____                        _____                  ┃",
+      "┃  |  __ \\                      |  _  |                 ┃",
+      "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
+      "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
+      "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
+      "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
+      "┃                                                       ┃",
+      "┃                  Your score was: %4d                  ┃",
+      "┃                                                       ┃",
+      "┃                      Play again?                      ┃",
+      "┃                          y/n                          ┃",
+      "┃                                                       ┃",
+      "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
+
+  for (int i = self->offset.y + self->height / 2 - 7, j = 0;
+       i < self->offset.y + self->height / 2 - 7 + 14; ++i, ++j)
+    mvprintw(i, self->offset.x + self->width - 28, fmt[j], snake->length);
+
+  while (true) {
+    switch (getch()) {
+    case 'y':
+    case 'Y':
+      // Reset the game
+      destroyMap(self);
+      destroySnake(snake);
+      self = newMap();
+      snake = newSnake((Point){self->width / 2, self->height / 2});
+      return true;
+    case 'n':
+    case 'N':
+    case 'q':
+      return false;
+    }
   }
 }
