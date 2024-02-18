@@ -5,17 +5,17 @@
 
 Node *newNode(const Point pos, Node *prev) {
   Node *self = malloc(sizeof(Node));
-
   self->pos = pos;
   self->prev = prev;
   self->next = NULL;
-
   return self;
 }
 
 void destroyNode(Node *self) {
-  if (self != NULL)
+  if (self != NULL) {
     free(self);
+    self = NULL;
+  }
 }
 
 Snake *newSnake(const Point center) {
@@ -35,6 +35,7 @@ void destroySnake(Snake *self) {
       current = next;
     }
     free(self);
+    self = NULL;
   }
 }
 
