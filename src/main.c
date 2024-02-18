@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "map.h"
+#include "screen.h"
 #include "snake.h"
 
 int main(void) {
@@ -12,16 +12,16 @@ int main(void) {
   initializeNcurses();
 
   // Instantiate the objects
-  Map *map = newMap();
-  Snake *snake = newSnake((Point){map->width / 2, map->height / 2});
+  Screen *screen = newScreen();
+  Snake *snake = newSnake((Point){screen->width / 2, screen->height / 2});
 
-  drawWalls(map);
+  drawWalls(screen);
 
   Point collision = {-1, -1};
 
   // GAME LOOP
-  while ((borders(map, snake) && !selfCollision(snake, &collision)) ||
-         gameOver(map, snake, collision)) {
+  while ((borders(screen, snake) && !selfCollision(snake, &collision)) ||
+         gameOver(screen, snake, collision)) {
     switch (getch()) { // Get keyboard input
     case 'w':
     case 'k':
@@ -49,23 +49,23 @@ int main(void) {
 
     bool growing = false;
     Node *oldTail = advance(snake);
-    if (snake->head->x == map->orb.x && snake->head->y == map->orb.y) {
+    if (snake->head->x == screen->orb.x && snake->head->y == screen->orb.y) {
       growing = true;
       grow(snake, oldTail); // reappend oldTail to the Snake
-      spawnOrb(map);
+      spawnOrb(screen);
     } else
       destroyNode(oldTail);
 
-    draw(map, snake, growing, oldTail);
+    draw(screen, snake, growing, oldTail);
 
-    updateScore(map, snake->length);
+    updateScore(screen, snake->length);
 
     usleep(100000); // sleep 300ms
   }
 
 QUIT:
   destroySnake(snake);
-  destroyMap(map);
+  destroyScreen(screen);
   endwin();
   return EXIT_SUCCESS;
 }

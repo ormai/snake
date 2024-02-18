@@ -1,10 +1,10 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
-#include "map.h"
+#include "screen.h"
 
-Map *newMap(void) {
-  Map *self = malloc(sizeof(Map));
+Screen *newScreen(void) {
+  Screen *self = malloc(sizeof(Screen));
 
   self->screenWidth = getmaxx(stdscr) - 1;
   self->screenHeight = getmaxy(stdscr) - 1;
@@ -20,7 +20,7 @@ Map *newMap(void) {
   return self;
 }
 
-void destroyMap(Map *self) {
+void destroyScreen(Screen *self) {
   if (self != NULL) {
     if (self->grid != NULL)
       free(self->grid);
@@ -46,7 +46,7 @@ void initializeNcurses(void) {
 static int translate(const int x) { return x + x + 1; }
 
 // color is one of the colors provided by ncurses
-static void drawPointWithColor(const Map *self, const Point pos,
+static void drawPointWithColor(const Screen *self, const Point pos,
                                const int color) {
   init_pair(color, color, -1);
   attrset(COLOR_PAIR(color)); // Set color
@@ -57,12 +57,12 @@ static void drawPointWithColor(const Map *self, const Point pos,
   attrset(COLOR_PAIR(7)); // Restore white color
 }
 
-bool borders(const Map *self, const Snake *snake) {
+bool borders(const Screen *self, const Snake *snake) {
   return snake->head->x <= self->width && snake->head->x >= 0 &&
          snake->head->y <= self->height && snake->head->y >= 0;
 }
 
-void spawnOrb(Map *self) {
+void spawnOrb(Screen *self) {
   do {
     self->orb.x = rand() % self->width;
     self->orb.y = rand() % self->height;
@@ -71,11 +71,11 @@ void spawnOrb(Map *self) {
   drawPointWithColor(self, self->orb, COLOR_MAGENTA);
 }
 
-void updateScore(const Map *self, const unsigned score) {
+void updateScore(const Screen *self, const unsigned score) {
   mvprintw(self->offset.y - 2, self->offset.x - 1, "Score: %d", score);
 }
 
-void drawWalls(const Map *self) {
+void drawWalls(const Screen *self) {
   mvprintw(self->offset.y - 1, self->offset.x - 1, "╔");
   mvprintw(self->offset.y - 1, self->width * 2 + self->offset.x + 1, "╗");
   mvprintw(self->height + self->offset.y + 1, self->offset.x - 1, "╚");
@@ -92,7 +92,7 @@ void drawWalls(const Map *self) {
   }
 }
 
-void draw(const Map *self, const Snake *snake, const bool growing,
+void draw(const Screen *self, const Snake *snake, const bool growing,
           const Node *oldTail) {
   // Draw the new head added by Snake::advance()
   const Point headPos = {snake->head->x, snake->head->y};
@@ -107,7 +107,7 @@ void draw(const Map *self, const Snake *snake, const bool growing,
   }
 }
 
-bool gameOver(Map *self, Snake *snake, const Point collision) {
+bool gameOver(Screen *self, Snake *snake, const Point collision) {
   if (collision.x != -1 && collision.y != -1)
     drawPointWithColor(self, collision, COLOR_RED);
 
@@ -139,11 +139,11 @@ bool gameOver(Map *self, Snake *snake, const Point collision) {
     case 'y':
     case 'Y': {
       // Reset the game
-      Map *oldSelf = self;
+      Screen *oldSelf = self;
       Snake *oldSnake = snake;
-      self = newMap();
+      self = newScreen();
       snake = newSnake((Point){self->width / 2, self->height / 2});
-      destroyMap(oldSelf);
+      destroyScreen(oldSelf);
       destroySnake(oldSnake);
       return true;
     }
