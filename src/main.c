@@ -11,6 +11,13 @@ int main(void) {
   setlocale(LC_ALL, ""); // Use the locale of the environment
   initializeNcurses();
 
+  enum Delay {
+    DELAY_MIN = 33333,
+    DELAY_MEDIUM = 50000,
+    DELAY_MAX = 83333,
+    DELAY_INCREMENT = DELAY_MAX - DELAY_MIN
+  };
+
   // Instantiate the objects
   Screen *screen = newScreen();
   Snake *snake = newSnake((Point){screen->width / 2, screen->height / 2});
@@ -23,10 +30,12 @@ int main(void) {
 
   spawnOrb(screen);
 
+  float progress = 0.0;
+
   // GAME LOOP
   while (
       (insideBoundaries(screen, snake) && !selfCollision(snake, &collision)) ||
-      gameOver(screen, snake, &collision)) {
+      gameOver(screen, snake, &collision, &progress)) {
 
     switch (getch()) { // Get keyboard input
     case 'w':
@@ -60,6 +69,7 @@ int main(void) {
       growing = true;
       grow(snake, oldTail); // reappend oldTail to the Snake
       spawnOrb(screen);
+      progress = (float)snake->length / (screen->width * screen->height);
     } else
       destroyNode(oldTail);
 
@@ -67,12 +77,23 @@ int main(void) {
 
     updateScore(screen, snake->length);
 
-    // usleep(100000); // 10 fps
-    usleep(50000); // 20 fps
+    switch (screen->difficulty) {
+    case INCREMENTAL:
+      usleep(DELAY_MAX - (unsigned)(DELAY_INCREMENT * progress));
+      break;
+    case EASY:
+      usleep(DELAY_MAX); // 12 fps
+      break;
+    case MEDIUM:
+      usleep(DELAY_MEDIUM); // 20 fps
+      break;
+    case HARD:
+      usleep(DELAY_MIN); // 30 fps
+      break;
+    }
   }
 
 QUIT:
-  // fclose(log);
   destroySnake(snake);
   destroyScreen(screen);
   endwin();
