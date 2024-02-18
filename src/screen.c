@@ -58,8 +58,8 @@ static void drawPointWithColor(const Screen *self, const Point pos,
 }
 
 bool borders(const Screen *self, const Snake *snake) {
-  return snake->head->x <= self->width && snake->head->x >= 0 &&
-         snake->head->y <= self->height && snake->head->y >= 0;
+  return snake->head->pos.x <= self->width && snake->head->pos.x >= 0 &&
+         snake->head->pos.y <= self->height && snake->head->pos.y >= 0;
 }
 
 void spawnOrb(Screen *self) {
@@ -95,14 +95,13 @@ void drawWalls(const Screen *self) {
 void draw(const Screen *self, const Snake *snake, const bool growing,
           const Node *oldTail) {
   // Draw the new head added by Snake::advance()
-  const Point headPos = {snake->head->x, snake->head->y};
-  drawPointWithColor(self, headPos, COLOR_GREEN);
+  drawPointWithColor(self, snake->head->pos, COLOR_GREEN);
   // self->grid[snake->head->y * self->width + snake->head->x] = true;
 
   // Cover the old tail with a blank if the Snake has not grown
   if (!growing) {
-    mvprintw(oldTail->y + self->offset.y,
-             translate(oldTail->x) + self->offset.x, "  ");
+    mvprintw(oldTail->pos.y + self->offset.y,
+             translate(oldTail->pos.x) + self->offset.x, "  ");
     // self->grid[oldTail->y * self->width + oldTail->x] = false; // segfault
   }
 }

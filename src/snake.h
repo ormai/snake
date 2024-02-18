@@ -13,7 +13,7 @@ typedef struct point {
 // The atomic piece that constitutes the Snake
 typedef struct node {
   struct node *prev, *next;
-  int x, y;
+  Point pos;
 } Node;
 
 typedef struct snake {

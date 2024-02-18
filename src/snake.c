@@ -5,8 +5,7 @@
 Node *newNode(const Point pos, Node *prev) {
   Node *self = malloc(sizeof(Node));
 
-  self->x = pos.x;
-  self->y = pos.y;
+  self->pos = pos;
   self->prev = prev;
   self->next = NULL;
 
@@ -41,8 +40,8 @@ void destroySnake(Snake *self) {
 bool selfCollision(const Snake *self, Point *collision) {
   for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
     for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev)
-      if (it1->x == it2->x && it1->y == it2->y) {
-        *collision = (Point){it1->x, it1->y};
+      if (it1->pos.x == it2->pos.x && it1->pos.y == it2->pos.y) {
+        *collision = it1->pos;
         return true;
       }
   return false;
@@ -50,7 +49,7 @@ bool selfCollision(const Snake *self, Point *collision) {
 
 Node *advance(Snake *self) {
   // Copy the position of the current head
-  Point newHeadPosition = {self->head->x, self->head->y};
+  Point newHeadPosition = self->head->pos;
 
   // Move it forward in the current direction
   switch (self->direction) {
@@ -81,10 +80,8 @@ Node *advance(Snake *self) {
 }
 
 void changeDirection(Snake *self, Direction direction) {
-  // The left hand side of the || is clear, while the right hand side checks
-  // that the direction doesn't go from SOUTH to NORTH or vice versa and from
-  // EAST to WEST and vice versa.
-
+  // Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
+  // and vice versa when the Snake is longer than 1 Point
   if (direction == self->direction ||
       self->length > 1 && direction == (self->direction + 2) % (WEST + 1))
     return;

@@ -49,7 +49,8 @@ int main(void) {
 
     bool growing = false;
     Node *oldTail = advance(snake);
-    if (snake->head->x == screen->orb.x && snake->head->y == screen->orb.y) {
+    if (snake->head->pos.x == screen->orb.x &&
+        snake->head->pos.y == screen->orb.y) {
       growing = true;
       grow(snake, oldTail); // reappend oldTail to the Snake
       spawnOrb(screen);
