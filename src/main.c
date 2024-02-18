@@ -17,8 +17,11 @@ int main(void) {
 
   drawWalls(map);
 
+  Point collision = {-1, -1};
+
   // GAME LOOP
-  while (borders(map, snake) && !selfCollision(snake) || gameOver(map, snake)) {
+  while ((borders(map, snake) && !selfCollision(snake, &collision)) ||
+         gameOver(map, snake, collision)) {
     switch (getch()) { // Get keyboard input
     case 'w':
     case 'k':

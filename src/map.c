@@ -1,5 +1,4 @@
 #include <ncurses.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "map.h"
@@ -42,7 +41,21 @@ void initializeNcurses(void) {
 }
 
 // Take an x coordinate and transate it for the screen
-static int translate(int x) { return x + x + 1; }
+// This is due to the fact that thare a point on th escree is two character wide
+// This is just for the representation
+static int translate(const int x) { return x + x + 1; }
+
+// color is one of the colors provided by ncurses
+static void drawPointWithColor(const Map *self, const Point pos,
+                               const int color) {
+  init_pair(color, color, -1);
+  attrset(COLOR_PAIR(color)); // Set color
+
+  mvprintw(pos.y + self->offset.y, translate(pos.x) + self->offset.x, "██");
+
+  init_pair(7, COLOR_WHITE, -1);
+  attrset(COLOR_PAIR(7)); // Restore white color
+}
 
 bool borders(const Map *self, const Snake *snake) {
   return snake->head->x <= self->width && snake->head->x >= 0 &&
@@ -55,14 +68,7 @@ void spawnOrb(Map *self) {
     self->orb.y = rand() % self->height;
   } while (self->grid[self->orb.x * self->width + self->orb.y]);
 
-  init_pair(1, COLOR_RED, -1);
-  attrset(COLOR_PAIR(1));
-
-  mvprintw(self->orb.y + self->offset.y,
-           translate(self->orb.x) + self->offset.x, "██");
-
-  init_pair(7, COLOR_WHITE, -1);
-  attrset(COLOR_PAIR(7));
+  drawPointWithColor(self, self->orb, COLOR_MAGENTA);
 }
 
 void updateScore(const Map *self, const unsigned score) {
@@ -89,19 +95,25 @@ void drawWalls(const Map *self) {
 void draw(const Map *self, const Snake *snake, const bool growing,
           const Node *oldTail) {
   // Draw the new head added by Snake::advance()
-  mvprintw(snake->head->y + self->offset.y,
-           translate(snake->head->x) + self->offset.x, "██");
-  self->grid[snake->head->y * self->width + snake->head->x] = true;
+  const Point headPos = {snake->head->x, snake->head->y};
+  drawPointWithColor(self, headPos, COLOR_GREEN);
+  // self->grid[snake->head->y * self->width + snake->head->x] = true;
 
   // Cover the old tail with a blank if the Snake has not grown
   if (!growing) {
     mvprintw(oldTail->y + self->offset.y,
              translate(oldTail->x) + self->offset.x, "  ");
-    self->grid[oldTail->y * self->width + snake->head->x] = false;
+    // self->grid[oldTail->y * self->width + oldTail->x] = false; // segfault
   }
 }
 
-bool gameOver(Map *self, Snake *snake) {
+bool gameOver(Map *self, Snake *snake, const Point collision) {
+  if (collision.x != -1 && collision.y != -1)
+    drawPointWithColor(self, collision, COLOR_RED);
+
+  // hide score count above the playing field
+  mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
+
   const char *fmt[] = {
       "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
       "┃   _____                        _____                  ┃",
@@ -111,7 +123,7 @@ bool gameOver(Map *self, Snake *snake) {
       "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
       "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
       "┃                                                       ┃",
-      "┃                  Your score was: %4d                  ┃",
+      "┃                  Your score was: %-4d                 ┃",
       "┃                                                       ┃",
       "┃                      Play again?                      ┃",
       "┃                          y/n                          ┃",
@@ -125,13 +137,16 @@ bool gameOver(Map *self, Snake *snake) {
   while (true) {
     switch (getch()) {
     case 'y':
-    case 'Y':
+    case 'Y': {
       // Reset the game
-      destroyMap(self);
-      destroySnake(snake);
+      Map *oldSelf = self;
+      Snake *oldSnake = snake;
       self = newMap();
       snake = newSnake((Point){self->width / 2, self->height / 2});
+      destroyMap(oldSelf);
+      destroySnake(oldSnake);
       return true;
+    }
     case 'n':
     case 'N':
     case 'q':
