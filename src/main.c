@@ -1,8 +1,10 @@
+#define _ISOC2X_SOURCE
+
 #include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <threads.h>
 
 #include "screen.h"
 #include "snake.h"
@@ -11,12 +13,9 @@ int main(void) {
   setlocale(LC_ALL, ""); // Use the locale of the environment
   initializeNcurses();
 
-  enum Delay {
-    DELAY_MIN = 33333,
-    DELAY_MEDIUM = 50000,
-    DELAY_MAX = 83333,
-    DELAY_INCREMENT = DELAY_MAX - DELAY_MIN
-  };
+  const struct timespec delayMin = {0, 33333333L}, delayMedium = {0, 50000000L},
+                        delayMax = {0, 83333333L},
+                        delayDiff = {0, delayMax.tv_nsec - delayMin.tv_nsec};
 
   // Instantiate the objects
   Screen *screen = newScreen();
@@ -24,6 +23,7 @@ int main(void) {
 
   if (!welcome(screen))
     goto QUIT;
+
   drawWalls(screen);
   spawnOrb(screen);
   updateScore(screen, snake->length);
@@ -85,17 +85,20 @@ int main(void) {
           COLOR_RED);
 
     switch (screen->difficulty) {
-    case INCREMENTAL:
-      usleep(DELAY_MAX - (unsigned)(DELAY_INCREMENT * progress));
+    case INCREMENTAL: {
+      const struct timespec delayIncrement = {
+          0, delayMax.tv_nsec - (unsigned)(delayDiff.tv_nsec * progress)};
+      thrd_sleep(&delayIncrement, NULL);
       break;
+    }
     case EASY:
-      usleep(DELAY_MAX); // 12 fps
+      thrd_sleep(&delayMax, NULL); // 12 fps
       break;
     case MEDIUM:
-      usleep(DELAY_MEDIUM); // 20 fps
+      thrd_sleep(&delayMedium, NULL); // 20 fps
       break;
     case HARD:
-      usleep(DELAY_MIN); // 30 fps
+      thrd_sleep(&delayMin, NULL); // 30 fps
       break;
     }
   }
