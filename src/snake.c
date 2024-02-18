@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "snake.h"
 
@@ -20,7 +21,7 @@ void destroyNode(Node *self) {
 Snake *newSnake(const Point center) {
   Snake *self = malloc(sizeof(Snake));
   self->tail = self->head = newNode(center, NULL);
-  self->direction = rand() % WEST;
+  self->direction = rand() % (WEST + 1);
   self->length = 1;
   return self;
 }
@@ -83,7 +84,7 @@ void changeDirection(Snake *self, Direction direction) {
   // Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
   // and vice versa when the Snake is longer than 1 Point
   if (direction == self->direction ||
-      self->length > 1 && direction == (self->direction + 2) % (WEST + 1))
+      (self->length > 1 && direction == (self->direction + 2) % (WEST + 1)))
     return;
 
   self->direction = direction;
