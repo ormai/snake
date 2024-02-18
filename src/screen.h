@@ -1,3 +1,5 @@
+// vi:ft=c
+
 #ifndef SCREEN_H
 #define SCREEN_H
 
@@ -5,6 +7,8 @@
 #include <stdlib.h>
 
 #include "snake.h"
+
+typedef enum { INCREMENTAL, EASY, MEDIUM, HARD } Difficulty;
 
 typedef struct screen {
   int screenWidth, screenHeight;
@@ -20,6 +24,8 @@ typedef struct screen {
   // To subscript such an array i * width + j is used.
 
   Point orb; // The orb to capture
+
+  Difficulty difficulty;
 } Screen;
 
 Screen *newScreen(void);
@@ -27,22 +33,24 @@ void destroyScreen(Screen *self);
 
 void initializeNcurses(void);
 
+void drawWalls(const Screen *self);
+
+void updateScore(const Screen *self, const unsigned score);
+
+// Welcome screen
+// Returns true if the player choose to play, false if they choose to quit
+bool welcome(Screen *self);
+
 // Spawn a new orb
 void spawnOrb(Screen *self);
 
-// void drawPointWithColor(const Point pos, const int color);
-
 // Check for collisions
-bool borders(const Screen *self, const Snake *snake);
-
-void drawWalls(const Screen *self);
+bool insideBoundaries(const Screen *self, const Snake *snake);
 
 // Draw the Snake on to the Screen
 void draw(const Screen *self, const Snake *snake, bool growing,
           const Node *oldTail);
 
-void updateScore(const Screen *self, const unsigned score);
-
-bool gameOver(Screen *self, Snake *snake, const Point collision);
+bool gameOver(Screen *self, Snake *snake, Point *collision);
 
 #endif // !SCREEN_H

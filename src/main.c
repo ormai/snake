@@ -15,13 +15,19 @@ int main(void) {
   Screen *screen = newScreen();
   Snake *snake = newSnake((Point){screen->width / 2, screen->height / 2});
 
+  if (!welcome(screen))
+    goto QUIT;
   drawWalls(screen);
 
   Point collision = {-1, -1};
 
+  spawnOrb(screen);
+
   // GAME LOOP
-  while ((borders(screen, snake) && !selfCollision(snake, &collision)) ||
-         gameOver(screen, snake, collision)) {
+  while (
+      (insideBoundaries(screen, snake) && !selfCollision(snake, &collision)) ||
+      gameOver(screen, snake, &collision)) {
+
     switch (getch()) { // Get keyboard input
     case 'w':
     case 'k':
@@ -61,10 +67,12 @@ int main(void) {
 
     updateScore(screen, snake->length);
 
-    usleep(100000); // sleep 300ms
+    // usleep(100000); // 10 fps
+    usleep(50000); // 20 fps
   }
 
 QUIT:
+  // fclose(log);
   destroySnake(snake);
   destroyScreen(screen);
   endwin();
