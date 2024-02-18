@@ -51,6 +51,6 @@ bool insideBoundaries(const Screen *self, const Snake *snake);
 void draw(const Screen *self, const Snake *snake, bool growing,
           const Node *oldTail);
 
-bool gameOver(Screen *self, Snake *snake, Point *collision);
+bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress);
 
 #endif // !SCREEN_H
