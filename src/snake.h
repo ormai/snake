@@ -5,7 +5,7 @@
 
 typedef enum { NORTH, EAST, SOUTH, WEST } Direction;
 
-// Top-right coordinates
+// Coordinates relative to the top right corner of the Screen
 typedef struct point {
   int x, y;
 } Point;
@@ -40,7 +40,8 @@ void changeDirection(Snake *self, Direction direction);
 void grow(Snake *self, Node *oldTail);
 
 // Check if the Snake touches itself
-bool selfCollision(const Snake *self);
+// Sets the parameter collision to the point where the collision happened
+bool selfCollision(const Snake *self, Point *collision);
 
 #endif // !SNAKE_H
 
