@@ -116,9 +116,6 @@ static void drawPointWithColor(const Screen *self, const Point pos,
 }
 
 bool insideBoundaries(const Screen *self, const Snake *snake) {
-  FILE *log = fopen("log", "a");
-  fprintf(log, "Head (%d), (%d), W %d, H %d\n", snake->head->pos.x, snake->head->pos.y, self->width, self->height);
-  fclose(log);
   if (snake->head->pos.x < self->width && snake->head->pos.x > 0 &&
       snake->head->pos.y < self->height && snake->head->pos.y > 0) {
     return true;
@@ -177,7 +174,7 @@ void draw(const Screen *self, const Snake *snake, const bool growing,
   }
 }
 
-bool gameOver(Screen *self, Snake *snake, Point *collision) {
+bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress) {
   if (collision->x != -1 && collision->y != -1)
     drawPointWithColor(self, *collision, COLOR_RED);
 
@@ -214,6 +211,8 @@ bool gameOver(Screen *self, Snake *snake, Point *collision) {
     else
       mvprintw(y, begin.x, "%s", fmt[i]);
 
+  Difficulty difficulty = self->difficulty; // remember previous difficulty
+
   while (true) {
     switch (getch()) {
     case '\n':
@@ -224,25 +223,25 @@ bool gameOver(Screen *self, Snake *snake, Point *collision) {
       destroySnake(snake);
 
       self = newScreen();
+      self->difficulty = difficulty;
       snake = newSnake((Point){self->width / 2, self->height / 2});
 
       drawWalls(self);
       *collision = (Point){-1, -1};
+      *progress = 0.0;
       spawnOrb(self);
       return true;
     }
     case KEY_RIGHT: // increment difficulty
-      if (self->difficulty != HARD) {
-        ++self->difficulty;
-        mvprintw(begin.y + 10, begin.x, fmt[10],
-                 difficultyFmt[self->difficulty]);
+      if (difficulty != HARD) {
+        ++difficulty;
+        mvprintw(begin.y + 10, begin.x, fmt[10], difficultyFmt[difficulty]);
       }
       break;
     case KEY_LEFT: // decrement difficulty
-      if (self->difficulty != INCREMENTAL) {
-        --self->difficulty;
-        mvprintw(begin.y + 10, begin.x, fmt[10],
-                 difficultyFmt[self->difficulty]);
+      if (difficulty != INCREMENTAL) {
+        --difficulty;
+        mvprintw(begin.y + 10, begin.x, fmt[10], difficultyFmt[difficulty]);
       }
       break;
     case 'n':
