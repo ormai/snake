@@ -15,7 +15,9 @@ Screen *newScreen(void) {
   self->offset = (Point){(self->screenWidth - self->width * 2) / 2,
                          (self->screenHeight - self->height) / 2};
 
-  self->grid = calloc(self->width * self->height, sizeof(int));
+  self->grid = (int **)malloc((self->height + 1) * sizeof(int *));
+  for (int i = 0; i <= self->height; ++i)
+    self->grid[i] = (int *)calloc(self->width + 1, sizeof(int));
 
   self->difficulty = INCREMENTAL;
   return self;
@@ -23,8 +25,11 @@ Screen *newScreen(void) {
 
 void destroyScreen(Screen *self) {
   if (self != NULL) {
-    if (self->grid != NULL)
+    if (self->grid != NULL) {
+      for (int i = 0; i <= self->height; ++i)
+        free(self->grid[i]);
       free(self->grid);
+    }
     free(self);
   }
 }
@@ -35,7 +40,6 @@ void initializeNcurses(void) {
   noecho(); // Disabl echoing for getch()
   intrflush(stdscr, false); // Flush the tty on quit
   keypad(stdscr, true);     // Enable keypad for the arrow keys
-  nodelay(stdscr, true);    // getch() doesn't wait for input
   curs_set(0);              // Make the cursor invisible
   start_color();            // Have some colors
   use_default_colors();
@@ -72,11 +76,13 @@ bool welcome(Screen *self) {
     else
       mvprintw(y, begin.x, "%s", fmt[i]);
 
+  nodelay(stdscr, false);
   while (true) {
     switch (getch()) {
     case '\n':
     case 'p':
       drawWalls(self);
+      nodelay(stdscr, true); // getch() doesn't wait for input
       return true;
     case KEY_RIGHT: // increment difficulty
       if (self->difficulty != HARD) {
@@ -104,8 +110,7 @@ bool welcome(Screen *self) {
 static int translate(const int x) { return x + x + 1; }
 
 // color is one of the colors provided by ncurses
-static void drawPointWithColor(const Screen *self, const Point pos,
-                               const int color) {
+void drawPointWithColor(const Screen *self, const Point pos, const int color) {
   init_pair(color, color, -1);
   attrset(COLOR_PAIR(color)); // Set color
 
@@ -116,20 +121,19 @@ static void drawPointWithColor(const Screen *self, const Point pos,
 }
 
 bool insideBoundaries(const Screen *self, const Snake *snake) {
-  if (snake->head->pos.x < self->width && snake->head->pos.x > 0 &&
-      snake->head->pos.y < self->height && snake->head->pos.y > 0) {
+  if (snake->head->pos.x <= self->width && snake->head->pos.x >= 0 &&
+      snake->head->pos.y <= self->height && snake->head->pos.y >= 0) {
     return true;
   }
 
-  drawPointWithColor(self, snake->head->pos, COLOR_RED);
   return false;
 }
 
 void spawnOrb(Screen *self) {
   do {
-    self->orb.x = rand() % self->width;
-    self->orb.y = rand() % self->height;
-  } while (self->grid[self->orb.x * self->width + self->orb.y]);
+    self->orb.x = rand() % (self->width + 1);
+    self->orb.y = rand() % (self->height + 1);
+  } while (self->grid[self->orb.y][self->orb.x] == 1);
 
   drawPointWithColor(self, self->orb, COLOR_MAGENTA);
 }
@@ -164,13 +168,13 @@ void draw(const Screen *self, const Snake *snake, const bool growing,
           const Node *oldTail) {
   // Draw the new head added by Snake::advance()
   drawPointWithColor(self, snake->head->pos, COLOR_GREEN);
-  self->grid[snake->head->pos.y * self->width + snake->head->pos.x] = true;
+  self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
 
   // Cover the old tail with a blank if the Snake has not grown
   if (!growing) {
     mvprintw(oldTail->pos.y + self->offset.y,
              translate(oldTail->pos.x) + self->offset.x, "  ");
-    self->grid[oldTail->pos.y * self->width + oldTail->pos.x] = false;
+    self->grid[oldTail->pos.y][oldTail->pos.x] = 0;
   }
 }
 
@@ -213,6 +217,7 @@ bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress) {
 
   Difficulty difficulty = self->difficulty; // remember previous difficulty
 
+  nodelay(stdscr, false);
   while (true) {
     switch (getch()) {
     case '\n':
@@ -230,6 +235,8 @@ bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress) {
       *collision = (Point){-1, -1};
       *progress = 0.0;
       spawnOrb(self);
+      updateScore(self, snake->length);
+      nodelay(stdscr, true);
       return true;
     }
     case KEY_RIGHT: // increment difficulty

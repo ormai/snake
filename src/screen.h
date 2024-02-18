@@ -18,14 +18,11 @@ typedef struct screen {
   // in order to center the playing field
   Point offset;
 
-  bool *grid; // Keep track of the occupied cells. Useful when generating orbs.
-  // grid will represent the playing field which is a 2D surface, but the
-  // constructor allocates a 1D array of size width * height.
-  // To subscript such an array i * width + j is used.
-
   Point orb; // The orb to capture
 
   Difficulty difficulty;
+
+  int **grid; // Keep track of the occupied cells. Useful when generating orbs.
 } Screen;
 
 Screen *newScreen(void);
@@ -52,5 +49,7 @@ void draw(const Screen *self, const Snake *snake, bool growing,
           const Node *oldTail);
 
 bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress);
+
+void drawPointWithColor(const Screen *self, const Point pos, const int color);
 
 #endif // !SCREEN_H
