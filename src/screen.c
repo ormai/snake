@@ -1,3 +1,17 @@
+/* screen.c -- Implementation of the class Screen
+ *
+ * Copyright (C) 2024  Mario D'Andrea <https://ormai.dev>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details. */
+
 #include <ncurses.h>
 #include <stdlib.h>
 
@@ -104,7 +118,7 @@ bool welcome(Screen *self) {
 }
 
 // Take an x coordinate and transate it for the screen
-// This is due to the fact that thare a point on th escree is two character wide
+// This is due to the fact that a point on thee screen is two character wide
 // This is just for the representation
 static int translate(const int x) { return x + x + 1; }
 
