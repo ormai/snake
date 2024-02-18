@@ -1,5 +1,4 @@
 #include <ncurses.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "screen.h"
@@ -15,9 +14,9 @@ Screen *newScreen(void) {
   self->offset = (Point){(self->screenWidth - self->width * 2) / 2,
                          (self->screenHeight - self->height) / 2};
 
-  self->grid = (int **)malloc((self->height + 1) * sizeof(int *));
+  self->grid = malloc((self->height + 1) * sizeof(int *));
   for (int i = 0; i <= self->height; ++i)
-    self->grid[i] = (int *)calloc(self->width + 1, sizeof(int));
+    self->grid[i] = calloc(self->width + 1, sizeof(int));
 
   self->difficulty = INCREMENTAL;
   return self;
@@ -31,6 +30,7 @@ void destroyScreen(Screen *self) {
       free(self->grid);
     }
     free(self);
+    self = NULL;
   }
 }
 
@@ -76,7 +76,6 @@ bool welcome(Screen *self) {
     else
       mvprintw(y, begin.x, "%s", fmt[i]);
 
-  nodelay(stdscr, false);
   while (true) {
     switch (getch()) {
     case '\n':
@@ -121,12 +120,8 @@ void drawPointWithColor(const Screen *self, const Point pos, const int color) {
 }
 
 bool insideBoundaries(const Screen *self, const Snake *snake) {
-  if (snake->head->pos.x <= self->width && snake->head->pos.x >= 0 &&
-      snake->head->pos.y <= self->height && snake->head->pos.y >= 0) {
-    return true;
-  }
-
-  return false;
+  return snake->head->pos.x <= self->width && snake->head->pos.x >= 0 &&
+         snake->head->pos.y <= self->height && snake->head->pos.y >= 0;
 }
 
 void spawnOrb(Screen *self) {
@@ -221,8 +216,7 @@ bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress) {
   while (true) {
     switch (getch()) {
     case '\n':
-    case 'y':
-    case 'Y': {
+    case 'y': {
       // Reset the game
       destroyScreen(self);
       destroySnake(snake);
@@ -252,7 +246,6 @@ bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress) {
       }
       break;
     case 'n':
-    case 'N':
     case 'q':
       return false;
     }
