@@ -1,5 +1,3 @@
-// vim:filetype=c
-
 #ifndef MAP_H
 #define MAP_H
 
@@ -32,6 +30,8 @@ void initializeNcurses(void);
 // Spawn a new orb
 void spawnOrb(Map *self);
 
+// void drawPointWithColor(const Point pos, const int color);
+
 // Check for collisions
 bool borders(const Map *self, const Snake *snake);
 
@@ -43,6 +43,6 @@ void draw(const Map *self, const Snake *snake, bool growing,
 
 void updateScore(const Map *self, const unsigned score);
 
-bool gameOver(Map *self, Snake *snake);
+bool gameOver(Map *self, Snake *snake, const Point collision);
 
 #endif // !MAP_H
