@@ -1,6 +1,7 @@
 #include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -25,17 +26,16 @@ int main(void) {
   if (!welcome(screen))
     goto QUIT;
   drawWalls(screen);
+  spawnOrb(screen);
+  updateScore(screen, snake->length);
 
   Point collision = {-1, -1};
-
-  spawnOrb(screen);
-
   float progress = 0.0;
+  bool bounds = true;
 
   // GAME LOOP
-  while (
-      (insideBoundaries(screen, snake) && !selfCollision(snake, &collision)) ||
-      gameOver(screen, snake, &collision, &progress)) {
+  while ((bounds && !selfCollision(snake, &collision)) ||
+         gameOver(screen, snake, &collision, &progress)) {
 
     switch (getch()) { // Get keyboard input
     case 'w':
@@ -68,14 +68,22 @@ int main(void) {
         snake->head->pos.y == screen->orb.y) {
       growing = true;
       grow(snake, oldTail); // reappend oldTail to the Snake
+      screen->grid[oldTail->pos.y][oldTail->pos.x] = 1;
+
       spawnOrb(screen);
       progress = (float)snake->length / (screen->width * screen->height);
+
+      updateScore(screen, snake->length);
     } else
       destroyNode(oldTail);
 
-    draw(screen, snake, growing, oldTail);
-
-    updateScore(screen, snake->length);
+    bounds = insideBoundaries(screen, snake);
+    if (bounds)
+      draw(screen, snake, growing, oldTail);
+    else
+      drawPointWithColor(
+          screen, snake->length > 1 ? snake->head->prev->pos : oldTail->pos,
+          COLOR_RED);
 
     switch (screen->difficulty) {
     case INCREMENTAL:
