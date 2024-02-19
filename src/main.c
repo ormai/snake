@@ -29,25 +29,23 @@ int main(void) {
                         delayMax = {0, 83333333L},
                         delayDiff = {0, delayMax.tv_nsec - delayMin.tv_nsec};
 
+  Point collision = {-1, -1};
+  float progress = 0.0;
+  Difficulty difficulty = INCREMENTAL;
+  bool bounds = true;
+
   // Instantiate the objects
   Screen *screen = newScreen();
   Snake *snake = newSnake((Point){screen->width / 2, screen->height / 2});
 
-  if (!welcome(screen))
-    goto QUIT;
+  bool quit = dialog(screen, &difficulty, false, 0, (Point){0, 0});
 
+  // move in dialog screen
   drawWalls(screen);
   spawnOrb(screen);
   updateScore(screen, snake->length);
 
-  Point collision = {-1, -1};
-  float progress = 0.0;
-  bool bounds = true;
-
-  // GAME LOOP
-  while ((bounds && !selfCollision(snake, &collision)) ||
-         gameOver(screen, snake, &collision, &progress)) {
-
+  while (!quit) {      // GAME LOO
     switch (getch()) { // Get keyboard input
     case 'w':
     case 'k':
@@ -70,7 +68,7 @@ int main(void) {
       changeDirection(snake, WEST);
       break;
     case 'q':
-      goto QUIT;
+      quit = true;
     }
 
     bool growing = false;
@@ -92,11 +90,26 @@ int main(void) {
     if (bounds)
       draw(screen, snake, growing, oldTail);
     else
-      drawPointWithColor(
-          screen, snake->length > 1 ? snake->head->prev->pos : oldTail->pos,
-          COLOR_RED);
+      drawPoint(screen,
+                snake->length > 1 ? snake->head->prev->pos : oldTail->pos,
+                COLOR_RED);
 
-    switch (screen->difficulty) {
+    if ((!bounds || selfCollision(snake, &collision)) &&
+        !(quit = dialog(screen, &difficulty, true, snake->length, collision))) {
+      destroyScreen(screen);
+      screen = newScreen();
+      drawWalls(screen);
+      spawnOrb(screen);
+
+      destroySnake(snake);
+      snake = newSnake((Point){screen->width / 2, screen->height / 2});
+
+      collision = (Point){-1, -1};
+      progress = 0.0;
+      updateScore(screen, snake->length);
+    }
+
+    switch (difficulty) {
     case INCREMENTAL: {
       const struct timespec delayIncrement = {
           0, delayMax.tv_nsec - (unsigned)(delayDiff.tv_nsec * progress)};
@@ -115,7 +128,6 @@ int main(void) {
     }
   }
 
-QUIT:
   destroySnake(snake);
   destroyScreen(screen);
   endwin();
