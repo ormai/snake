@@ -56,7 +56,8 @@ bool selfCollision(const Snake *self, Point *collision) {
   for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
     for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev)
       if (it1->pos.x == it2->pos.x && it1->pos.y == it2->pos.y) {
-        *collision = it1->pos;
+        if (collision != NULL)
+          *collision = it1->pos;
         return true;
       }
   return false;
