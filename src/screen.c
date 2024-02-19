@@ -28,11 +28,9 @@ Screen *newScreen(void) {
   self->offset = (Point){(self->screenWidth - self->width * 2) / 2,
                          (self->screenHeight - self->height) / 2};
 
-  self->grid = malloc((self->height + 1) * sizeof(int *));
+  self->grid = malloc(sizeof(int * [self->height + 1]));
   for (int i = 0; i <= self->height; ++i)
     self->grid[i] = calloc(self->width + 1, sizeof(int));
-
-  self->difficulty = INCREMENTAL;
   return self;
 }
 
@@ -50,8 +48,8 @@ void destroyScreen(Screen *self) {
 
 void initializeNcurses(void) {
   initscr();
-  cbreak(); // Disable keybord input buffering, keys are immediately evaluated
-  noecho(); // Disabl echoing for getch()
+  cbreak(); // Disable keyboard input buffering, keys are immediately evaluated
+  noecho(); // Disable echoing for getch()
   intrflush(stdscr, false); // Flush the tty on quit
   keypad(stdscr, true);     // Enable keypad for the arrow keys
   curs_set(0);              // Make the cursor invisible
@@ -59,71 +57,13 @@ void initializeNcurses(void) {
   use_default_colors();
 }
 
-static const char *difficultyFmt[] = {"  incremental >", "   < easy >    ",
-                                      "  < medium >   ", "   < hard      "};
-bool welcome(Screen *self) {
-  static const char *fmt[] = {
-      "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-      "┃                             _                         ┃",
-      "┃                            | |                        ┃",
-      "┃             ___ _ __   __ _| | _____   ___            ┃",
-      "┃            / __| '_ \\ / _` | |/ / _ \\ / __|           ┃",
-      "┃            \\__ \\ | | | (_| |   <  __/| (__            ┃",
-      "┃            |___/_| |_|\\__,_|_|\\_\\___(_)___|           ┃",
-      "┃                                                       ┃",
-      "┃                         Play ⏎                        ┃",
-      "┃                                                       ┃",
-      "┃              Difficulty: %s              ┃",
-      "┃                                                       ┃",
-      "┃                         Quit q                        ┃",
-      "┃                                                       ┃",
-      "┃         by Mario D'Andrea <https://ormai.dev>         ┃",
-      "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
-
-  const int fmtHeight = 16, fmtWidth = 57;
-  const Point begin = {self->offset.x + self->width - fmtWidth / 2,
-                       self->offset.y + self->height / 2 - fmtHeight / 2};
-
-  for (int y = begin.y, i = 0; y < begin.y + fmtHeight; ++y, ++i)
-    if (i == 10) // Plug in the difficulty
-      mvprintw(y, begin.x, fmt[i], difficultyFmt[self->difficulty]);
-    else
-      mvprintw(y, begin.x, "%s", fmt[i]);
-
-  while (true) {
-    switch (getch()) {
-    case '\n':
-    case 'p':
-      drawWalls(self);
-      nodelay(stdscr, true); // getch() doesn't wait for input
-      return true;
-    case KEY_RIGHT: // increment difficulty
-      if (self->difficulty != HARD) {
-        ++self->difficulty;
-        mvprintw(begin.y + 10, begin.x, fmt[10],
-                 difficultyFmt[self->difficulty]);
-      }
-      break;
-    case KEY_LEFT: // decrement difficulty
-      if (self->difficulty != INCREMENTAL) {
-        --self->difficulty;
-        mvprintw(begin.y + 10, begin.x, fmt[10],
-                 difficultyFmt[self->difficulty]);
-      }
-      break;
-    case 'q':
-      return false;
-    }
-  }
-}
-
 // Take an x coordinate and transate it for the screen
 // This is due to the fact that a point on thee screen is two character wide
 // This is just for the representation
-static int translate(const int x) { return x + x + 1; }
+static inline int translate(const int x) { return x + x + 1; }
 
 // color is one of the colors provided by ncurses
-void drawPointWithColor(const Screen *self, const Point pos, const int color) {
+void drawPoint(const Screen *self, const Point pos, const int color) {
   init_pair(color, color, -1);
   attrset(COLOR_PAIR(color)); // Set color
 
@@ -144,7 +84,7 @@ void spawnOrb(Screen *self) {
     self->orb.y = rand() % (self->height + 1);
   } while (self->grid[self->orb.y][self->orb.x] == 1);
 
-  drawPointWithColor(self, self->orb, COLOR_MAGENTA);
+  drawPoint(self, self->orb, COLOR_MAGENTA);
 }
 
 void updateScore(const Screen *self, const unsigned score) {
@@ -154,29 +94,29 @@ void updateScore(const Screen *self, const unsigned score) {
 void drawWalls(const Screen *self) {
   erase();
 
-  const Point topLeftCorner = {self->offset.x, self->offset.y},
-              bottomRightCorner = {translate(self->width) + self->offset.x,
-                                   self->height + self->offset.y};
+  const Point northWest = {self->offset.x, self->offset.y},
+              southEasth = {translate(self->width) + self->offset.x,
+                            self->height + self->offset.y};
 
-  mvprintw(topLeftCorner.y - 1, topLeftCorner.x, "╔");
-  mvprintw(topLeftCorner.y - 1, bottomRightCorner.x + 2, "╗");
-  mvprintw(bottomRightCorner.y + 1, topLeftCorner.x, "╚");
-  mvprintw(bottomRightCorner.y + 1, bottomRightCorner.x + 2, "╝");
+  mvprintw(northWest.y - 1, northWest.x, "╔");
+  mvprintw(northWest.y - 1, southEasth.x + 2, "╗");
+  mvprintw(southEasth.y + 1, northWest.x, "╚");
+  mvprintw(southEasth.y + 1, southEasth.x + 2, "╝");
 
-  for (int i = topLeftCorner.x + 1; i <= bottomRightCorner.x + 1; ++i) {
-    mvprintw(topLeftCorner.y - 1, i, "═");
-    mvprintw(bottomRightCorner.y + 1, i, "═");
+  for (int i = northWest.x + 1; i <= southEasth.x + 1; ++i) {
+    mvprintw(northWest.y - 1, i, "═");
+    mvprintw(southEasth.y + 1, i, "═");
   }
-  for (int j = topLeftCorner.y; j <= bottomRightCorner.y; ++j) {
-    mvprintw(j, topLeftCorner.x, "║");
-    mvprintw(j, bottomRightCorner.x + 2, "║");
+  for (int j = northWest.y; j <= southEasth.y; ++j) {
+    mvprintw(j, northWest.x, "║");
+    mvprintw(j, southEasth.x + 2, "║");
   }
 }
 
 void draw(const Screen *self, const Snake *snake, const bool growing,
           const Node *oldTail) {
   // Draw the new head added by Snake::advance()
-  drawPointWithColor(self, snake->head->pos, COLOR_GREEN);
+  drawPoint(self, snake->head->pos, COLOR_GREEN);
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
 
   // Cover the old tail with a blank if the Snake has not grown
@@ -187,81 +127,92 @@ void draw(const Screen *self, const Snake *snake, const bool growing,
   }
 }
 
-bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress) {
-  if (collision->x != -1 && collision->y != -1)
-    drawPointWithColor(self, *collision, COLOR_RED);
+// if parameter gameOver is false, score and collision are irrelevant
+bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
+            const unsigned score, const Point collision) {
+  static const char
+      *fmtDifficulty[] = {"  incremental >", "   < easy >    ",
+                          "  < medium >   ", "   < hard      "},
+      *fmtWelcome[] =
+          {"┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+           "┃                             _                         ┃",
+           "┃                            | |                        ┃",
+           "┃             ___ _ __   __ _| | _____   ___            ┃",
+           "┃            / __| '_ \\ / _` | |/ / _ \\ / __|           ┃",
+           "┃            \\__ \\ | | | (_| |   <  __/| (__            ┃",
+           "┃            |___/_| |_|\\__,_|_|\\_\\___(_)___|           ┃",
+           "┃                                                       ┃",
+           "┃                         Play ⏎                        ┃",
+           "┃                                                       ┃",
+           "┃              Difficulty: %s              ┃",
+           "┃                                                       ┃",
+           "┃                         Quit q                        ┃",
+           "┃                                                       ┃",
+           "┃         by Mario D'Andrea <https://ormai.dev>         ┃",
+           "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"},
+      *fmtGameOver[] = {
+          "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+          "┃   _____                        _____                  ┃",
+          "┃  |  __ \\                      |  _  |                 ┃",
+          "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
+          "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
+          "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
+          "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
+          "┃                                                       ┃",
+          "┃                  Your score was: %-4d                 ┃",
+          "┃                                                       ┃",
+          "┃              Difficulty: %s              ┃",
+          "┃                                                       ┃",
+          "┃                      Play again?                      ┃",
+          "┃                          y/n                          ┃",
+          "┃                                                       ┃",
+          "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
 
-  // hide score count above the playing field
-  mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
+  const char **fmt = gameOver ? fmtGameOver : fmtWelcome;
 
-  static const char *fmt[] = {
-      "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-      "┃   _____                        _____                  ┃",
-      "┃  |  __ \\                      |  _  |                 ┃",
-      "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
-      "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
-      "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
-      "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
-      "┃                                                       ┃",
-      "┃                  Your score was: %-4d                 ┃",
-      "┃                                                       ┃",
-      "┃              Difficulty: %s              ┃",
-      "┃                                                       ┃",
-      "┃                      Play again?                      ┃",
-      "┃                          y/n                          ┃",
-      "┃                                                       ┃",
-      "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
+  if (gameOver) {
+    if (collision.x != -1 && collision.y != -1)
+      drawPoint(self, collision, COLOR_RED);
 
-  const int fmtHeight = 16, fmtWidth = 57;
-  const Point begin = {self->offset.x + self->width - fmtWidth / 2,
-                       self->offset.y + self->height / 2 - fmtHeight / 2};
+    // hide score count above the playing field
+    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
+    nodelay(stdscr, false);
+  }
 
-  for (int y = begin.y, i = 0; y < begin.y + fmtHeight; ++y, ++i)
-    if (i == 8) // Plug in the score
-      mvprintw(y, begin.x, fmt[i], snake->length);
+  static const int dialogHeight = 16, dialogWidth = 57;
+  const Point begin = {self->offset.x + self->width - dialogWidth / 2 + 1,
+                       self->offset.y + self->height / 2 - dialogHeight / 2};
+
+  for (int y = begin.y, i = 0; y < begin.y + dialogHeight; ++y, ++i)
+    if (gameOver && i == 8) // Plug in the score
+      mvprintw(y, begin.x, fmt[i], score);
     else if (i == 10) // Plug in the difficulty
-      mvprintw(y, begin.x, fmt[i], difficultyFmt[self->difficulty]);
+      mvprintw(y, begin.x, fmt[i], fmtDifficulty[*difficulty]);
     else
       mvprintw(y, begin.x, "%s", fmt[i]);
 
-  Difficulty difficulty = self->difficulty; // remember previous difficulty
-
-  nodelay(stdscr, false);
   while (true) {
     switch (getch()) {
     case '\n':
     case 'y': {
-      // Reset the game
-      destroyScreen(self);
-      destroySnake(snake);
-
-      self = newScreen();
-      self->difficulty = difficulty;
-      snake = newSnake((Point){self->width / 2, self->height / 2});
-
-      drawWalls(self);
-      *collision = (Point){-1, -1};
-      *progress = 0.0;
-      spawnOrb(self);
-      updateScore(self, snake->length);
-      nodelay(stdscr, true);
-      return true;
+      nodelay(stdscr, true); // getch() doesn't wait for input
+      return false;
     }
     case KEY_RIGHT: // increment difficulty
-      if (difficulty != HARD) {
-        ++difficulty;
-        mvprintw(begin.y + 10, begin.x, fmt[10], difficultyFmt[difficulty]);
+      if (*difficulty != HARD) {
+        ++*difficulty;
+        mvprintw(begin.y + 10, begin.x, fmt[10], fmtDifficulty[*difficulty]);
       }
       break;
     case KEY_LEFT: // decrement difficulty
-      if (difficulty != INCREMENTAL) {
-        --difficulty;
-        mvprintw(begin.y + 10, begin.x, fmt[10], difficultyFmt[difficulty]);
+      if (*difficulty != INCREMENTAL) {
+        --*difficulty;
+        mvprintw(begin.y + 10, begin.x, fmt[10], fmtDifficulty[*difficulty]);
       }
       break;
     case 'n':
     case 'q':
-      return false;
+      return true;
     }
   }
 }

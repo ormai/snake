@@ -32,8 +32,6 @@ typedef struct screen {
 
   Point orb; // The orb to capture
 
-  Difficulty difficulty;
-
   int **grid; // Keep track of the occupied cells. Useful when generating orbs.
 } Screen;
 
@@ -45,10 +43,6 @@ void initializeNcurses(void);
 void drawWalls(const Screen *self);
 
 void updateScore(const Screen *self, const unsigned score);
-
-// Welcome screen
-// Returns true if the player choose to play, false if they choose to quit
-bool welcome(Screen *self);
 
 // Spawn a new orb
 void spawnOrb(Screen *self);
@@ -62,6 +56,10 @@ void draw(const Screen *self, const Snake *snake, bool growing,
 
 bool gameOver(Screen *self, Snake *snake, Point *collision, float *progress);
 
-void drawPointWithColor(const Screen *self, const Point pos, const int color);
+void drawPoint(const Screen *self, const Point pos, const int color);
+
+// Returns true if the player wants to quit
+bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
+            const unsigned score, const Point collision);
 
 #endif // !SCREEN_H
