@@ -52,6 +52,18 @@ void destroySnake(Snake *self) {
   }
 }
 
+/* void destroySnake(Snake *self) {
+  if (self != NULL) {
+    if (self->head != NULL) {
+      self->head = self->head->prev;
+      destroyNode(self->head->next);
+      destroySnake(self);
+    }
+    free(self);
+    self = NULL;
+  }
+} */
+
 bool selfCollision(const Snake *self, Point *collision) {
   for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
     for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev)
