@@ -19,42 +19,41 @@
 
 typedef enum { NORTH, EAST, SOUTH, WEST } Direction;
 
-// Coordinates relative to the top right corner of the Screen
+// Coordinates the top left corner of the Screen
 typedef struct point {
   int x, y;
 } Point;
 
-// The atomic piece that constitutes the Snake
+// The atomic piece that constitutes a Snake
 typedef struct node {
   struct node *prev, *next;
   Point pos;
 } Node;
 
+// The Snake is modelled by a linked list
 typedef struct snake {
   unsigned length; // Also the score
-
   Node *head, *tail;
-
-  Direction direction; // Current direction
+  Direction direction;
 } Snake;
 
-Node *newNode(const Point pos, Node *prev);
+Node *newNode(const Point spawnPosition, Node *prev);
 void destroyNode(Node *self);
 
-Snake *newSnake(const Point center);
+Snake *newSnake(const Point headPosition);
 void destroySnake(Snake *self);
 
 // Move the snake one cell forward in the current direction
 // Returns the old tail
 Node *advance(Snake *self);
 
-void changeDirection(Snake *self, Direction direction);
+void changeDirection(Snake *self, Direction newDirection);
 
-// Add a Node to the Snake
+// Make the Snake grow by appending to it the tail popped previously by advance
 void grow(Snake *self, Node *oldTail);
 
 // Check if the Snake touches itself
-// Sets the parameter collision to the point where the collision happened
+// If a self collision happens sets the parameter collision
 bool selfCollision(const Snake *self, Point *collision);
 
 #endif // !SNAKE_H
