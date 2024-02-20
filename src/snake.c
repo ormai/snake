@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "snake.h"
@@ -41,28 +42,12 @@ Snake *newSnake(const Point center) {
 
 void destroySnake(Snake *self) {
   if (self != NULL) {
-    Node *current = self->head, *next;
-    while (current != NULL) {
-      next = current->next;
-      destroyNode(current);
-      current = next;
-    }
+    for (Node *it = self->head; it != NULL; it = it->prev)
+      destroyNode(it->next);
     free(self);
     self = NULL;
   }
 }
-
-/* void destroySnake(Snake *self) {
-  if (self != NULL) {
-    if (self->head != NULL) {
-      self->head = self->head->prev;
-      destroyNode(self->head->next);
-      destroySnake(self);
-    }
-    free(self);
-    self = NULL;
-  }
-} */
 
 bool selfCollision(const Snake *self, Point *collision) {
   for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
