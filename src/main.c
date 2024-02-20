@@ -32,20 +32,21 @@ int main(void) {
   Point collision = {-1, -1};
   float progress = 0.0;
   Difficulty difficulty = INCREMENTAL;
-  bool bounds = true;
+  bool wallCollision = false;
 
   // Instantiate the objects
   Screen *screen = newScreen();
-  Snake *snake = newSnake((Point){screen->width / 2, screen->height / 2});
+  Snake *snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
 
+  // Welcome dialog
   bool quit = dialog(screen, &difficulty, false, 0, (Point){0, 0});
 
-  // move in dialog screen
   drawWalls(screen);
   spawnOrb(screen);
   updateScore(screen, snake->length);
 
-  while (!quit) {      // GAME LOO
+  // Main loop
+  while (!quit) {
     switch (getch()) { // Get keyboard input
     case 'w':
     case 'k':
@@ -76,33 +77,31 @@ int main(void) {
     if (snake->head->pos.x == screen->orb.x &&
         snake->head->pos.y == screen->orb.y) {
       growing = true;
-      grow(snake, oldTail); // reappend oldTail to the Snake
-      screen->grid[oldTail->pos.y][oldTail->pos.x] = 1;
-
+      grow(snake, oldTail); // append oldTail to the Snake
+      screen->grid[oldTail->pos.y][oldTail->pos.x] = 1; // Mark the cell
       spawnOrb(screen);
-      progress = (float)snake->length / (screen->width * screen->height);
-
+      progress = (float)snake->length / (screen->mapWidth * screen->mapHeight);
       updateScore(screen, snake->length);
     } else
       destroyNode(oldTail);
 
-    bounds = insideBoundaries(screen, snake);
-    if (bounds)
+    if (!(wallCollision = !insideBoundaries(screen, snake)))
       draw(screen, snake, growing, oldTail);
-    else
+    else // Highlight the collision in red
       drawPoint(screen,
                 snake->length > 1 ? snake->head->prev->pos : oldTail->pos,
                 COLOR_RED);
 
-    if ((!bounds || selfCollision(snake, &collision)) &&
+    if ((wallCollision || selfCollision(snake, &collision)) &&
         !(quit = dialog(screen, &difficulty, true, snake->length, collision))) {
+      // Reset the game
       destroyScreen(screen);
       screen = newScreen();
       drawWalls(screen);
       spawnOrb(screen);
 
       destroySnake(snake);
-      snake = newSnake((Point){screen->width / 2, screen->height / 2});
+      snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
 
       collision = (Point){-1, -1};
       progress = 0.0;
@@ -124,12 +123,10 @@ int main(void) {
       break;
     case HARD:
       thrd_sleep(&delayMin, NULL); // 30 fps
-      break;
     }
   }
 
   destroySnake(snake);
   destroyScreen(screen);
-  endwin();
-  return EXIT_SUCCESS;
+  return endwin();
 }
