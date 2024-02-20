@@ -12,14 +12,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "snake.h"
 
-Node *newNode(const Point pos, Node *prev) {
+Node *newNode(const Point spawnPosition, Node *prev) {
   Node *self = malloc(sizeof(Node));
-  self->pos = pos;
+  self->pos = spawnPosition;
   self->prev = prev;
   self->next = NULL;
   return self;
@@ -32,9 +31,9 @@ void destroyNode(Node *self) {
   }
 }
 
-Snake *newSnake(const Point center) {
+Snake *newSnake(const Point headPosition) {
   Snake *self = malloc(sizeof(Snake));
-  self->tail = self->head = newNode(center, NULL);
+  self->tail = self->head = newNode(headPosition, NULL);
   self->direction = rand() % (WEST + 1);
   self->length = 1;
   return self;
@@ -61,8 +60,7 @@ bool selfCollision(const Snake *self, Point *collision) {
 }
 
 Node *advance(Snake *self) {
-  // Copy the position of the current head
-  Point newHeadPosition = self->head->pos;
+  Point newHeadPosition = self->head->pos; // Copy the current head position
 
   // Move it forward in the current direction
   switch (self->direction) {
@@ -92,14 +90,12 @@ Node *advance(Snake *self) {
   return oldTail;
 }
 
-void changeDirection(Snake *self, Direction direction) {
+void changeDirection(Snake *self, Direction newDirection) {
   // Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
-  // and vice versa when the Snake is longer than 1 Point
-  if (direction == self->direction ||
-      (self->length > 1 && direction == (self->direction + 2) % (WEST + 1)))
-    return;
-
-  self->direction = direction;
+  // and vice versa when the Snake is longer than 1
+  if (newDirection != self->direction &&
+      !(self->length > 1 && newDirection == (self->direction + 2) % (WEST + 1)))
+    self->direction = newDirection;
 }
 
 void grow(Snake *self, Node *oldTail) {

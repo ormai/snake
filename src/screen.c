@@ -20,24 +20,25 @@
 Screen *newScreen(void) {
   Screen *self = malloc(sizeof(Screen));
 
-  self->screenWidth = getmaxx(stdscr) - 1;
-  self->screenHeight = getmaxy(stdscr) - 1;
-  self->width = self->screenWidth / 4;
-  self->height = self->screenHeight * 2 / 3;
+  self->width = getmaxx(stdscr) - 1;
+  self->height = getmaxy(stdscr) - 1;
+  self->mapWidth = self->width / 4; // Further down is explained why 4
+  self->mapHeight = self->height * 2 / 3;
 
-  self->offset = (Point){(self->screenWidth - self->width * 2) / 2,
-                         (self->screenHeight - self->height) / 2};
+  self->offset = (Point){(self->width - self->mapWidth * 2) / 2,
+                         (self->height - self->mapHeight) / 2};
 
-  self->grid = malloc(sizeof(int * [self->height + 1]));
-  for (int i = 0; i <= self->height; ++i)
-    self->grid[i] = calloc(self->width + 1, sizeof(int));
+  self->grid = malloc(sizeof(int * [self->mapHeight + 1]));
+  for (int i = 0; i <= self->mapHeight; ++i)
+    self->grid[i] = calloc(self->mapWidth + 1, sizeof(int));
+
   return self;
 }
 
 void destroyScreen(Screen *self) {
   if (self != NULL) {
     if (self->grid != NULL) {
-      for (int i = 0; i <= self->height; ++i)
+      for (int i = 0; i <= self->mapHeight; ++i)
         free(self->grid[i]);
       free(self->grid);
     }
@@ -52,17 +53,20 @@ void initializeNcurses(void) {
   noecho(); // Disable echoing for getch()
   intrflush(stdscr, false); // Flush the tty on quit
   keypad(stdscr, true);     // Enable keypad for the arrow keys
+  nodelay(stdscr, true);    // getch() doesn't wait for input
   curs_set(0);              // Make the cursor invisible
   start_color();            // Have some colors
   use_default_colors();
 }
 
-// Take an x coordinate and transate it for the screen
-// This is due to the fact that a point on thee screen is two character wide
-// This is just for the representation
+// Translate an x coordinate to display on the Screen.
+// This is because two cells are used to display one point: "██". When handling
+// widths and x coordinates half as many as there are on the screen are
+// considered. So when it comes to representing those coordinates it is as if
+// the screen is _one cell yes, the next no, one cell yes, the next no..._
+// █ █ █ █ █ █. To represent x = 4 on the screen x must become 9
 static inline int translate(const int x) { return x + x + 1; }
 
-// color is one of the colors provided by ncurses
 void drawPoint(const Screen *self, const Point pos, const int color) {
   init_pair(color, color, -1);
   attrset(COLOR_PAIR(color)); // Set color
@@ -74,14 +78,14 @@ void drawPoint(const Screen *self, const Point pos, const int color) {
 }
 
 bool insideBoundaries(const Screen *self, const Snake *snake) {
-  return snake->head->pos.x <= self->width && snake->head->pos.x >= 0 &&
-         snake->head->pos.y <= self->height && snake->head->pos.y >= 0;
+  return snake->head->pos.x <= self->mapWidth && snake->head->pos.x >= 0 &&
+         snake->head->pos.y <= self->mapHeight && snake->head->pos.y >= 0;
 }
 
 void spawnOrb(Screen *self) {
   do {
-    self->orb.x = rand() % (self->width + 1);
-    self->orb.y = rand() % (self->height + 1);
+    self->orb.x = rand() % (self->mapWidth + 1);
+    self->orb.y = rand() % (self->mapHeight + 1);
   } while (self->grid[self->orb.y][self->orb.x] == 1);
 
   drawPoint(self, self->orb, COLOR_MAGENTA);
@@ -92,11 +96,11 @@ void updateScore(const Screen *self, const unsigned score) {
 }
 
 void drawWalls(const Screen *self) {
-  erase();
+  erase(); // Clean the terminal
 
   const Point northWest = {self->offset.x, self->offset.y},
-              southEasth = {translate(self->width) + self->offset.x,
-                            self->height + self->offset.y};
+              southEasth = {translate(self->mapWidth) + self->offset.x,
+                            self->mapHeight + self->offset.y};
 
   mvprintw(northWest.y - 1, northWest.x, "╔");
   mvprintw(northWest.y - 1, southEasth.x + 2, "╗");
@@ -127,7 +131,6 @@ void draw(const Screen *self, const Snake *snake, const bool growing,
   }
 }
 
-// if parameter gameOver is false, score and collision are irrelevant
 bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
             const unsigned score, const Point collision) {
   static const char
@@ -175,13 +178,12 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
       drawPoint(self, collision, COLOR_RED);
 
     // hide score count above the playing field
-    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
-    nodelay(stdscr, false);
+    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->mapWidth);
   }
 
   static const int dialogHeight = 16, dialogWidth = 57;
-  const Point begin = {self->offset.x + self->width - dialogWidth / 2 + 1,
-                       self->offset.y + self->height / 2 - dialogHeight / 2 +
+  const Point begin = {self->offset.x + self->mapWidth - dialogWidth / 2 + 1,
+                       self->offset.y + self->mapHeight / 2 - dialogHeight / 2 +
                            1};
 
   for (int y = begin.y, i = 0; y < begin.y + dialogHeight; ++y, ++i)
@@ -192,11 +194,10 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
     else
       mvprintw(y, begin.x, "%s", fmt[i]);
 
-  while (true) {
+  while (true) { // Listen for keyboard input
     switch (getch()) {
     case '\n':
     case 'y': {
-      nodelay(stdscr, true); // getch() doesn't wait for input
       return false;
     }
     case '>':
