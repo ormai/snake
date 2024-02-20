@@ -5,7 +5,7 @@ OBJECTS := build/snake.o build/screen.o
 ifeq ($(CONFIG), debug)
 	CFLAGS += -g3 -ggdb -Wpedantic -Wall -Wextra
 else
-	CFLAGS += -O2
+	CFLAGS += -O3
 endif
 
 all: snake
