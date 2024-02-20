@@ -181,7 +181,7 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
 
   static const int dialogHeight = 16, dialogWidth = 57;
   const Point begin = {self->offset.x + self->width - dialogWidth / 2 + 1,
-                       self->offset.y + self->height / 2 - dialogHeight / 2};
+                       self->offset.y + self->height / 2 - dialogHeight / 2 + 1};
 
   for (int y = begin.y, i = 0; y < begin.y + dialogHeight; ++y, ++i)
     if (gameOver && i == 8) // Plug in the score
