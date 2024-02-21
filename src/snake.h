@@ -43,13 +43,19 @@ void destroyNode(Node *self);
 Snake *newSnake(const Point headPosition);
 void destroySnake(Snake *self);
 
+// Create and append a new head to the snake
+void pushFront(Snake *self, Point newHeadPosition);
+
+// Pop the tail of the Snake and return it
+Node *popBack(Snake *self);
+
 // Move the snake one cell forward in the current direction
 // Returns the old tail
 Node *advance(Snake *self);
 
 void changeDirection(Snake *self, Direction newDirection);
 
-// Make the Snake grow by appending to it the tail popped previously by advance
+// Make the Snake grow by appending to it the tail popped when advancing
 void grow(Snake *self, Node *oldTail);
 
 // Check if the Snake touches itself
