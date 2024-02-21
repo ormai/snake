@@ -59,6 +59,18 @@ bool selfCollision(const Snake *self, Point *collision) {
   return false;
 }
 
+void pushFront(Snake *self, Point newHeadPosition) {
+  self->head->next = newNode(newHeadPosition, self->head);
+  self->head = self->head->next;
+}
+
+Node *popBack(Snake *self) {
+  Node *oldTail = self->tail;
+  self->tail = self->tail->next;
+  self->tail->prev = NULL;
+  return oldTail;
+}
+
 Node *advance(Snake *self) {
   Point newHeadPosition = self->head->pos; // Copy the current head position
 
@@ -78,16 +90,8 @@ Node *advance(Snake *self) {
     break;
   }
 
-  // Push new head
-  self->head->next = newNode(newHeadPosition, self->head);
-  self->head = self->head->next;
-
-  // Pop the tail
-  Node *oldTail = self->tail;
-  self->tail = self->tail->next;
-  self->tail->prev = NULL;
-
-  return oldTail;
+  pushFront(self, newHeadPosition); // Push new head
+  return popBack(self);             // Pop the tail
 }
 
 void changeDirection(Snake *self, Direction newDirection) {
