@@ -1,5 +1,5 @@
 .PHONY: all setup clean test
-LDLIBS := -lncurses
+LDLIBS := -lncursesw
 OBJECTS := build/snake.o build/screen.o
 
 ifeq ($(CONFIG), debug)
@@ -10,7 +10,7 @@ endif
 
 all: snake
 snake: setup $(OBJECTS)
-	$(CC) $(LDLIBS) $(CFLAGS) src/main.c -o $@ $(OBJECTS)
+	$(CC) $(CFLAGS) src/main.c -o $@ $(OBJECTS) $(LDLIBS)
 
 build/snake.o: src/snake.c src/snake.h
 	$(CC) $(CFLAGS) -c $< -o $@
