@@ -49,7 +49,6 @@ void draw(const Screen *self, const Snake *snake, bool growing,
           const Node *oldTail);
 
 // Place a colored point ("██") on the map.
-// Color is one of the eight terminal colors provided by ncurses.
 void drawPoint(const Screen *self, const Point pos, const int color);
 
 // Returns true if the player wants to quit.

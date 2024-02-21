@@ -102,10 +102,11 @@ int main(void) {
 
       destroySnake(snake);
       snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
+      updateScore(screen, snake->length);
 
       collision = (Point){-1, -1};
       progress = 0.0;
-      updateScore(screen, snake->length);
+      nodelay(stdscr, true);
     }
 
     switch (difficulty) {
@@ -128,5 +129,6 @@ int main(void) {
 
   destroySnake(snake);
   destroyScreen(screen);
-  return endwin();
+  endwin();
+  exit(0);
 }
