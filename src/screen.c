@@ -120,16 +120,17 @@ void drawWalls(const Screen *self) {
 
 void draw(const Screen *self, const Snake *snake, const bool growing,
           const Node *oldTail) {
-  // Draw the new head added by Snake::advance()
-  drawPoint(self, snake->head->pos, COLOR_GREEN);
-  self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
-
   // Cover the old tail with a blank if the Snake has not grown
   if (!growing) {
     mvprintw(oldTail->pos.y + self->offset.y,
              translate(oldTail->pos.x) + self->offset.x, "  ");
     self->grid[oldTail->pos.y][oldTail->pos.x] = 0;
   }
+
+  // Draw the new head added by Snake::advance()
+  drawPoint(self, snake->head->pos, COLOR_GREEN);
+  self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
+
 }
 
 // Move the little green snake on the welcome screen
