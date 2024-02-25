@@ -118,60 +118,57 @@ void drawWalls(const Screen *self) {
   }
 }
 
-void draw(const Screen *self, const Snake *snake, const bool growing,
-          const Node *oldTail) {
+void draw(const Screen *self, Snake *snake) {
   // Cover the old tail with a blank if the Snake has not grown
-  if (!growing) {
-    mvprintw(oldTail->pos.y + self->offset.y,
-             translate(oldTail->pos.x) + self->offset.x, "  ");
-    self->grid[oldTail->pos.y][oldTail->pos.x] = 0;
+  if (!snake->growing) {
+    mvprintw(snake->oldTail.y + self->offset.y,
+             translate(snake->oldTail.x) + self->offset.x, "  ");
+    self->grid[snake->oldTail.y][snake->oldTail.x] = 0;
   }
 
   // Draw the new head added by Snake::advance()
   drawPoint(self, snake->head->pos, COLOR_GREEN);
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
-
 }
 
 // Move the little green snake on the welcome screen
-static void updateDoodle(const Screen *self, Snake *doodle,
-                         const Point beginDialog, const int dialogHeight,
-                         const int dialogWidth) {
-  Point newHeadPos = doodle->head->pos;
+static void updateDoodle(Snake *doodle, const Point beginDialog,
+                         const int dialogHeight, const int dialogWidth) {
+  doodle->oldTail = doodle->tail->pos;
+  ouroboros(doodle); // Tail becomes the head
+
+  // Head moves forward
   switch (doodle->direction) {
   case NORTH:
     if (doodle->head->pos.y >= beginDialog.y) {
-      --newHeadPos.y;
+      --doodle->head->pos.y;
       break;
     }
     doodle->direction = WEST;
   case WEST:
     if (doodle->head->pos.x > beginDialog.x) {
-      newHeadPos.x -= 2;
+      doodle->head->pos.x -= 2;
       break;
     }
     doodle->direction = SOUTH;
   case SOUTH:
     if (doodle->head->pos.y - 1 < beginDialog.y + dialogHeight) {
-      ++newHeadPos.y;
+      ++doodle->head->pos.y;
       break;
     }
     doodle->direction = EAST;
   case EAST:
     if (doodle->head->pos.x < beginDialog.x + dialogWidth - 1) {
-      newHeadPos.x += 2;
+      doodle->head->pos.x += 2;
       break;
     }
     doodle->direction = NORTH;
-    --newHeadPos.y;
+    --doodle->head->pos.y;
   }
 
-  pushFront(doodle, newHeadPos);
-  setColor(COLOR_GREEN);
+  // Draw the head, hide the old tail, and sleep
   mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
-  Node *oldTail = popBack(doodle);
-  mvprintw(oldTail->pos.y, oldTail->pos.x, "  ");
-  destroyNode(oldTail);
+  mvprintw(doodle->oldTail.y, doodle->oldTail.x, "  ");
   thrd_sleep(&(const struct timespec){0, 33333333L}, NULL); // 30 fps
 }
 
@@ -282,6 +279,6 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
     }
 
     if (!gameOver)
-      updateDoodle(self, doodle, begin, dialogHeight, dialogWidth);
+      updateDoodle(doodle, begin, dialogHeight, dialogWidth);
   }
 }
