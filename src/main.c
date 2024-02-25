@@ -25,10 +25,11 @@ int main(void) {
   setlocale(LC_ALL, ""); // Use the locale of the environment
   initializeNcurses();
 
-  const struct timespec delayMin = {0, 33333333L}, delayMedium = {0, 50000000L},
-                        delayMax = {0, 83333333L},
-                        delayDiff = {0, delayMax.tv_nsec - delayMin.tv_nsec};
-
+  static const struct timespec delayMin = {0, 33333333L},
+                               delayMedium = {0, 50000000L},
+                               delayMax = {0, 83333333L},
+                               delayDiff = {0, delayMax.tv_nsec -
+                                                   delayMin.tv_nsec};
   Point collision = {-1, -1};
   float progress = 0.0;
   Difficulty difficulty = INCREMENTAL;
@@ -72,24 +73,23 @@ int main(void) {
       quit = true;
     }
 
-    bool growing = false;
-    Node *oldTail = advance(snake);
+    advance(snake);
+
     if (snake->head->pos.x == screen->orb.x &&
         snake->head->pos.y == screen->orb.y) {
-      growing = true;
-      grow(snake, oldTail); // append oldTail to the Snake
-      screen->grid[oldTail->pos.y][oldTail->pos.x] = 1; // Mark the cell
+      snake->growing = true;
+      ++snake->length;
       spawnOrb(screen);
       progress = (float)snake->length / (screen->mapWidth * screen->mapHeight);
       updateScore(screen, snake->length);
-    } else
-      destroyNode(oldTail);
+    }
 
-    if (!(wallCollision = !insideBoundaries(screen, snake)))
-      draw(screen, snake, growing, oldTail);
+    wallCollision = !insideBoundaries(screen, snake);
+    if (!wallCollision)
+      draw(screen, snake);
     else // Highlight the collision in red
       drawPoint(screen,
-                snake->length > 1 ? snake->head->prev->pos : oldTail->pos,
+                snake->length > 1 ? snake->head->prev->pos : snake->oldTail,
                 COLOR_RED);
 
     if ((wallCollision || selfCollision(snake, &collision)) &&
