@@ -59,39 +59,41 @@ bool selfCollision(const Snake *self, Point *collision) {
   return false;
 }
 
-void pushFront(Snake *self, Point newHeadPosition) {
-  self->head->next = newNode(newHeadPosition, self->head);
+void ouroboros(Snake *self) {
+  self->head->next = self->tail;
+  self->tail = self->tail->next;
+  self->tail->prev = NULL;
+
+  *self->head->next =
+      (Node){.next = NULL, .prev = self->head, .pos = self->head->pos};
   self->head = self->head->next;
 }
 
-Node *popBack(Snake *self) {
-  Node *oldTail = self->tail;
-  self->tail = self->tail->next;
-  self->tail->prev = NULL;
-  return oldTail;
-}
+void advance(Snake *self) {
+  if (!self->growing)
+    self->oldTail = self->tail->pos;
 
-Node *advance(Snake *self) {
-  Point newHeadPosition = self->head->pos; // Copy the current head position
+  if (self->growing) {
+    self->growing = false;
+    self->head = self->head->next = newNode(self->head->pos, self->head);
+  } else if (self->length > 1)
+    ouroboros(self);
 
   // Move it forward in the current direction
   switch (self->direction) {
   case NORTH:
-    --newHeadPosition.y;
+    --self->head->pos.y;
     break;
   case EAST:
-    ++newHeadPosition.x;
+    ++self->head->pos.x;
     break;
   case SOUTH:
-    ++newHeadPosition.y;
+    ++self->head->pos.y;
     break;
   case WEST:
-    --newHeadPosition.x;
+    --self->head->pos.x;
     break;
   }
-
-  pushFront(self, newHeadPosition); // Push new head
-  return popBack(self);             // Pop the tail
 }
 
 void changeDirection(Snake *self, Direction newDirection) {
@@ -100,11 +102,4 @@ void changeDirection(Snake *self, Direction newDirection) {
   if (newDirection != self->direction &&
       !(self->length > 1 && newDirection == (self->direction + 2) % (WEST + 1)))
     self->direction = newDirection;
-}
-
-void grow(Snake *self, Node *oldTail) {
-  oldTail->next = self->tail;
-  self->tail = oldTail;
-
-  ++self->length;
 }
