@@ -24,12 +24,11 @@
 int main(void) {
   setlocale(LC_ALL, ""); // Use the locale of the environment
   initializeNcurses();
+  init_color(8, 721, 733, 149); // #B8BB26 color for the head of the Snake
 
-  static const struct timespec delayMin = {0, 33333333L},
-                               delayMedium = {0, 50000000L},
-                               delayMax = {0, 83333333L},
-                               delayDiff = {0, delayMax.tv_nsec -
-                                                   delayMin.tv_nsec};
+  const struct timespec delayMin = {0, 33333333L}, delayMedium = {0, 50000000L},
+                        delayMax = {0, 83333333L},
+                        delayDiff = {0, delayMax.tv_nsec - delayMin.tv_nsec};
   Point collision = {-1, -1};
   float progress = 0.0;
   Difficulty difficulty = INCREMENTAL;

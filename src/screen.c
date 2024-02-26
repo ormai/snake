@@ -13,6 +13,7 @@
  * GNU General Public License for more details. */
 
 #include <ncurses.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <threads.h>
 
@@ -127,7 +128,9 @@ void draw(const Screen *self, Snake *snake) {
   }
 
   // Draw the new head added by Snake::advance()
-  drawPoint(self, snake->head->pos, COLOR_GREEN);
+  drawPoint(self, snake->head->pos, 8);
+  if (snake->head->prev != NULL)
+    drawPoint(self, snake->head->prev->pos, COLOR_GREEN);
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
 }
 
@@ -145,18 +148,21 @@ static void updateDoodle(Snake *doodle, const Point beginDialog,
       break;
     }
     doodle->direction = WEST;
+    [[fallthrough]];
   case WEST:
     if (doodle->head->pos.x > beginDialog.x) {
       doodle->head->pos.x -= 2;
       break;
     }
     doodle->direction = SOUTH;
+    [[fallthrough]];
   case SOUTH:
     if (doodle->head->pos.y - 1 < beginDialog.y + dialogHeight) {
       ++doodle->head->pos.y;
       break;
     }
     doodle->direction = EAST;
+    [[fallthrough]];
   case EAST:
     if (doodle->head->pos.x < beginDialog.x + dialogWidth - 1) {
       doodle->head->pos.x += 2;
@@ -167,7 +173,12 @@ static void updateDoodle(Snake *doodle, const Point beginDialog,
   }
 
   // Draw the head, hide the old tail, and sleep
+  setColor(8);
   mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
+  if (doodle->head->prev != NULL) {
+    setColor(COLOR_GREEN);
+    mvprintw(doodle->head->prev->pos.y, doodle->head->prev->pos.x, "██");
+  }
   mvprintw(doodle->oldTail.y, doodle->oldTail.x, "  ");
   thrd_sleep(&(const struct timespec){0, 33333333L}, NULL); // 30 fps
 }
