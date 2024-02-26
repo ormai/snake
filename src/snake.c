@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "snake.h"
