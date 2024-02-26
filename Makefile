@@ -1,12 +1,7 @@
 .PHONY: all setup clean test
 LDLIBS := -lncursesw
 OBJECTS := build/snake.o build/screen.o
-
-ifeq ($(CONFIG), debug)
-	CFLAGS += -g3 -ggdb -Wpedantic -Wall -Wextra
-else
-	CFLAGS += -O3
-endif
+CFLAGS := -O2
 
 all: snake
 snake: setup $(OBJECTS)
@@ -22,6 +17,7 @@ setup:
 
 test: snake
 	./snake
+	tput reset
 
 clean:
 	$(RM) -r snake build
