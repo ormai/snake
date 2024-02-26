@@ -44,6 +44,7 @@ void destroySnake(Snake *self) {
   if (self != NULL) {
     for (Node *it = self->head; it != NULL; it = it->prev)
       destroyNode(it->next);
+    destroyNode(self->tail);
     free(self);
     self = NULL;
   }
