@@ -24,6 +24,7 @@ typedef enum { INCREMENTAL, EASY, MEDIUM, HARD } Difficulty;
 typedef struct screen {
   int width, height;
   int mapWidth, mapHeight; // The map occupies a fraction of the screen
+  int playingSurface;
   Point offset;            // An offset from the top-left for the map
   Point orb;               // The orb to capture
   int **grid;              // Keep track of the occupied cells.
@@ -52,11 +53,13 @@ bool prepareGame(Screen *self, Snake *snake);
 // Place a colored point ("██") on the map.
 void drawPoint(const Screen *self, const Point pos, const int color);
 
+typedef enum { WELCOME, OVER, WIN } DialogKind;
+
 // Returns true if the player wants to quit.
 // When gameOver is true the welcome screen dialog is shown, if so score and
 // collision are irrelevant.
 // Sets the difficulty as chosen by the player.
-bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
+bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
             const unsigned score, const Point collision);
 
 #endif // !SCREEN_H

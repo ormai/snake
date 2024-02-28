@@ -20,6 +20,16 @@
 #include "screen.h"
 #include "snake.h"
 
+static void resetGame(Screen *screen, Snake *snake, Point *collision,
+                      float *progress) {
+  destroyScreen(screen);
+  screen = newScreen();
+  destroySnake(snake);
+  snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
+  *collision = (Point){-1, -1};
+  *progress = 0.0;
+}
+
 int main(void) {
   initializeNcurses();
   init_color(8, 721, 733, 149); // #B8BB26 color for the head of the Snake
@@ -36,8 +46,7 @@ int main(void) {
   Screen *screen = newScreen();
   Snake *snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
 
-  bool quit = dialog(screen, &difficulty, false, 0, (Point){0, 0});
-
+  bool quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
   if (!quit)
     quit = prepareGame(screen, snake);
 
@@ -70,13 +79,23 @@ int main(void) {
 
     advance(snake);
 
-    if (snake->head->pos.x == screen->orb.x &&
+    if (snake->head->pos.x == screen->orb.x && // Check for eaten orb
         snake->head->pos.y == screen->orb.y) {
       snake->growing = true;
       ++snake->length;
       spawnOrb(screen);
-      progress = (float)snake->length / (screen->mapWidth * screen->mapHeight);
       updateScore(screen, snake->length);
+      progress = (float)snake->length / screen->playingSurface;
+
+      if (snake->length == screen->playingSurface) { // Check for win
+        quit = dialog(screen, WIN, &difficulty, snake->length, (Point){0, 0});
+        resetGame(screen, snake, &collision, &progress);
+        if (!quit) {
+          quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
+          if (!quit)
+            prepareGame(screen, snake);
+        }
+      }
     }
 
     wallCollision = !insideBoundaries(screen, snake);
@@ -88,14 +107,8 @@ int main(void) {
                 COLOR_RED);
 
     if ((wallCollision || selfCollision(snake, &collision)) &&
-        !(quit = dialog(screen, &difficulty, true, snake->length, collision))) {
-      // Reset the game
-      destroyScreen(screen);
-      screen = newScreen();
-      destroySnake(snake);
-      snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
-      collision = (Point){-1, -1};
-      progress = 0.0;
+        !(quit = dialog(screen, OVER, &difficulty, snake->length, collision))) {
+      resetGame(screen, snake, &collision, &progress);
       prepareGame(screen, snake);
     }
 
