@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
-#include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -22,7 +21,6 @@
 #include "snake.h"
 
 int main(void) {
-  setlocale(LC_ALL, ""); // Use the locale of the environment
   initializeNcurses();
   init_color(8, 721, 733, 149); // #B8BB26 color for the head of the Snake
 
@@ -38,12 +36,10 @@ int main(void) {
   Screen *screen = newScreen();
   Snake *snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
 
-  // Welcome dialog
   bool quit = dialog(screen, &difficulty, false, 0, (Point){0, 0});
 
-  drawWalls(screen);
-  spawnOrb(screen);
-  updateScore(screen, snake->length);
+  if (!quit)
+    quit = prepareGame(screen, snake);
 
   // Main loop
   while (!quit) {
@@ -96,16 +92,11 @@ int main(void) {
       // Reset the game
       destroyScreen(screen);
       screen = newScreen();
-      drawWalls(screen);
-      spawnOrb(screen);
-
       destroySnake(snake);
       snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
-      updateScore(screen, snake->length);
-
       collision = (Point){-1, -1};
       progress = 0.0;
-      nodelay(stdscr, true);
+      prepareGame(screen, snake);
     }
 
     switch (difficulty) {

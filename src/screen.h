@@ -47,6 +47,8 @@ bool insideBoundaries(const Screen *self, const Snake *snake);
 // Draw the Snake on to the Screen
 void draw(const Screen *self, Snake *snake);
 
+bool prepareGame(Screen *self, Snake *snake);
+
 // Place a colored point ("██") on the map.
 void drawPoint(const Screen *self, const Point pos, const int color);
 
