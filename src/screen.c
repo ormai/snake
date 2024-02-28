@@ -28,6 +28,7 @@ Screen *newScreen(void) {
   self->height = getmaxy(stdscr) - 1;
   self->mapWidth = self->width / 4; // Further down is explained why 4
   self->mapHeight = self->height * 2 / 3;
+  self->playingSurface = self->mapWidth * self->mapHeight;
 
   self->offset = (Point){(self->width - self->mapWidth * 2) / 2,
                          (self->height - self->mapHeight) / 2};
@@ -173,12 +174,11 @@ bool prepareGame(Screen *self, Snake *snake) {
   }
 
   mvhline(self->offset.y + self->mapHeight + 2, self->offset.x, ' ',
-          self->width); // Hide tip at the bottom
-  nodelay(stdscr, true);   // getch() doesn't wait for input
+          self->width);  // Hide tip at the bottom
+  nodelay(stdscr, true); // getch() doesn't wait for input
   return false;
 }
 
-// Move the little green snake on the welcome screen
 static void updateDoodle(Snake *doodle, const Point beginDialog,
                          const int dialogHeight, const int dialogWidth) {
   doodle->oldTail = doodle->tail->pos;
@@ -227,83 +227,107 @@ static void updateDoodle(Snake *doodle, const Point beginDialog,
   thrd_sleep(&(const struct timespec){0, 33333333L}, NULL); // 30 fps
 }
 
-bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
+bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
             const unsigned score, const Point collision) {
-  static const char
-      *fmtDifficulty[] = {"  incremental >", "   < easy >    ",
-                          "  < medium >   ", "   < hard      "},
-      *fmtWelcome[] = {"",
-                       "                              _",
-                       "                             | |",
-                       "              ___ _ __   __ _| | _____   ___",
-                       "             / __| '_ \\ / _` | |/ / _ \\ / __|",
-                       "             \\__ \\ | | | (_| |   <  __/| (__",
-                       "             |___/_| |_|\\__,_|_|\\_\\___(_)___|",
-                       "",
-                       "                          Play ⏎",
-                       "",
-                       "             Difficulty: %s",
-                       "",
-                       "                          Quit q",
-                       "",
-                       "          by Mario D'Andrea <https://ormai.dev>",
-                       ""},
-      *fmtGameOver[] = {
-          "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-          "┃   _____                        _____                  ┃",
-          "┃  |  __ \\                      |  _  |                 ┃",
-          "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
-          "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
-          "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
-          "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
-          "┃                                                       ┃",
-          "┃                  Your score was: %-4d                 ┃",
-          "┃                                                       ┃",
-          "┃              Difficulty: %s              ┃",
-          "┃                                                       ┃",
-          "┃                      Play again?                      ┃",
-          "┃                          y/n                          ┃",
-          "┃                                                       ┃",
-          "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
-
-  const char **fmt = gameOver ? fmtGameOver : fmtWelcome;
-
-  if (gameOver) {
-    if (collision.x != -1 && collision.y != -1)
-      drawPoint(self, collision, COLOR_RED);
-
-    // Hide score count above the playing field
-    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
-    nodelay(stdscr, false); // to avoid 100% CPU usage
-  }
-
   static const int dialogHeight = 16, dialogWidth = 57;
   const Point begin = {self->offset.x + self->mapWidth - dialogWidth / 2 + 1,
                        self->offset.y + self->mapHeight / 2 - dialogHeight / 2 +
                            1};
-  const int diffFmtX = begin.x + (gameOver ? 0 : 3);
+  static char
+      *diff[] = {"  incremental >", "   < easy >    ", "  < medium >   ",
+                 "   < hard      "},
+      *welcome[] = {"",
+                    "                              _",
+                    "                             | |",
+                    "              ___ _ __   __ _| | _____   ___",
+                    "             / __| '_ \\ / _` | |/ / _ \\ / __|",
+                    "             \\__ \\ | | | (_| |   <  __/| (__",
+                    "             |___/_| |_|\\__,_|_|\\_\\___(_)___|",
+                    "",
+                    "",
+                    "          by Mario D'Andrea <https://ormai.dev>",
+                    "",
+                    "              Difficulty %s",
+                    "",
+                    "                  Quit [q]      Play [⏎]",
+                    "",
+                    ""},
+      *over[] =
+          {"┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+           "┃   _____                        _____                  ┃",
+           "┃  |  __ \\                      |  _  |                 ┃",
+           "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
+           "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
+           "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
+           "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
+           "┃                                                       ┃",
+           "┃                                                       ┃",
+           "┃                   Your score was %-4d                 ┃",
+           "┃                                                       ┃",
+           "┃               Difficulty %s              ┃",
+           "┃                                                       ┃",
+           "┃              Quit [q]      Play again [⏎]             ┃",
+           "┃                                                       ┃",
+           "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"},
+      *win[] = {
+          "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+          "┃         __   __            _    _                     ┃",
+          "┃         \\ \\ / /           | |  | |                    ┃",
+          "┃          \\ V /___  _   _  | |  | | ___  _ __          ┃",
+          "┃           \\ // _ \\| | | | | |/\\| |/ _ \\| '_ \\         ┃",
+          "┃           | | (_) | |_| | \\  /\\  / (_) | | | |        ┃",
+          "┃           \\_/\\___/ \\__,_|  \\/  \\/ \\___/|_| |_|        ┃",
+          "┃                                                       ┃",
+          "┃                                                       ┃",
+          "┃                   Your score was %-4d                 ┃",
+          "┃                                                       ┃",
+          "┃               Difficulty: %s             ┃",
+          "┃                                                       ┃",
+          "┃             Quit [q]      Return home [⏎]             ┃",
+          "┃                                                       ┃",
+          "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
 
-  setColor(0);
-  for (int y = begin.y, i = 0; y < begin.y + dialogHeight; ++y, ++i)
-    if (gameOver && i == 8) // Plug in the score
-      mvprintw(y, begin.x, fmt[i], score);
-    else if (i == 10) // Plug in the difficulty
-      mvprintw(y, diffFmtX, fmt[i], fmtDifficulty[*difficulty]);
-    else
-      mvprintw(y, begin.x, "%s", fmt[i]);
+  Snake *doodle = NULL; // Snake decoration on welcome screen
+  char **fmt;           // Select the appropriate format
+  // Add right offset so that changing difficulty doesn't interfere with doodle
+  const int diffFmtX = begin.x + (kind == WELCOME ? 3 : 0);
 
-  Snake *doodle = NULL;
-  if (!gameOver) {
+  switch (kind) {
+  case WELCOME:
+    fmt = welcome;
     doodle = newSnake((Point){begin.x, begin.y + 2});
     doodle->direction = SOUTH;
     setColor(COLOR_GREEN);
-    for (int i = 0; i < 7; ++i) {
+    for (int i = 0; i < 7; ++i) { // Make it long 7
       doodle->head->next =
           newNode((Point){begin.x, doodle->head->pos.y + 1}, doodle->head);
       doodle->head = doodle->head->next;
       mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
     }
+    break;
+  case OVER:
+    fmt = over;
+    if (collision.x != -1 && collision.y != -1)
+      drawPoint(self, collision, COLOR_RED);
+    // Hide score count above the playing field
+    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
+    nodelay(stdscr, false);
+    break;
+  case WIN:
+    fmt = win;
+    nodelay(stdscr, false);
+    break;
   }
+
+  // Draw the dialog
+  setColor(0);
+  for (int y = begin.y, i = 0; y < begin.y + dialogHeight; ++y, ++i)
+    if (kind != WELCOME && i == 9) // Plug in the score
+      mvprintw(y, begin.x, fmt[i], score);
+    else if (i == 11) // Plug in the difficulty
+      mvprintw(y, diffFmtX, fmt[i], diff[*difficulty]);
+    else
+      mvprintw(y, begin.x, "%s", fmt[i]);
 
   while (true) { // Listen for keyboard input
     switch (getch()) {
@@ -314,18 +338,18 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
     }
     case '>':
     case KEY_RIGHT: // increment difficulty
-      if (*difficulty != HARD) {
+      if (kind != WIN && *difficulty != HARD) {
         ++*difficulty;
         setColor(0);
-        mvprintw(begin.y + 10, diffFmtX, fmt[10], fmtDifficulty[*difficulty]);
+        mvprintw(begin.y + 11, diffFmtX, fmt[11], diff[*difficulty]);
       }
       break;
     case '<':
     case KEY_LEFT: // decrement difficulty
-      if (*difficulty != INCREMENTAL) {
+      if (kind != WIN && *difficulty != INCREMENTAL) {
         --*difficulty;
         setColor(0);
-        mvprintw(begin.y + 10, diffFmtX, fmt[10], fmtDifficulty[*difficulty]);
+        mvprintw(begin.y + 11, diffFmtX, fmt[11], diff[*difficulty]);
       }
       break;
     case 'n':
@@ -334,7 +358,7 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
       return true;
     }
 
-    if (!gameOver)
+    if (kind == WELCOME)
       updateDoodle(doodle, begin, dialogHeight, dialogWidth);
   }
 }
