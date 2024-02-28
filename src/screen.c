@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
+#include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -51,6 +52,7 @@ void destroyScreen(Screen *self) {
 }
 
 void initializeNcurses(void) {
+  setlocale(LC_ALL, ""); // Use the locale of the environment
   initscr();
   cbreak(); // Disable keyboard input buffering, keys are immediately evaluated
   noecho(); // Disable echoing for getch()
@@ -132,6 +134,48 @@ void draw(const Screen *self, Snake *snake) {
   if (snake->head->prev != NULL)
     drawPoint(self, snake->head->prev->pos, COLOR_GREEN);
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
+}
+
+bool prepareGame(Screen *self, Snake *snake) {
+  drawWalls(self);
+  spawnOrb(self);
+  updateScore(self, snake->length);
+  drawPoint(self, snake->head->pos, 8); // Draw the head of the snake
+  setColor(0);                          // Tip at the bottom
+  mvprintw(self->offset.y + self->mapHeight + 2, self->offset.x,
+           "Move in any direction to start the game.");
+
+  nodelay(stdscr, false);
+  // Get the initial direction of the snake
+  switch (getch()) {
+  case 'w':
+  case 'k':
+  case KEY_UP:
+    snake->direction = NORTH;
+    break;
+  case 'l':
+  case 'd':
+  case KEY_RIGHT:
+    snake->direction = EAST;
+    break;
+  case 'j':
+  case 's':
+  case KEY_DOWN:
+    snake->direction = SOUTH;
+    break;
+  case 'h':
+  case 'a':
+  case KEY_LEFT:
+    snake->direction = WEST;
+    break;
+  case 'q':
+    return true;
+  }
+
+  mvhline(self->offset.y + self->mapHeight + 2, self->offset.x, ' ',
+          self->width); // Hide tip at the bottom
+  nodelay(stdscr, true);   // getch() doesn't wait for input
+  return false;
 }
 
 // Move the little green snake on the welcome screen
@@ -229,7 +273,7 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
       drawPoint(self, collision, COLOR_RED);
 
     // Hide score count above the playing field
-    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->mapWidth);
+    mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
     nodelay(stdscr, false); // to avoid 100% CPU usage
   }
 
@@ -251,6 +295,7 @@ bool dialog(Screen *self, Difficulty *difficulty, const bool gameOver,
   Snake *doodle = NULL;
   if (!gameOver) {
     doodle = newSnake((Point){begin.x, begin.y + 2});
+    doodle->direction = SOUTH;
     setColor(COLOR_GREEN);
     for (int i = 0; i < 7; ++i) {
       doodle->head->next =

@@ -35,7 +35,6 @@ void destroyNode(Node *self) {
 Snake *newSnake(const Point headPosition) {
   Snake *self = malloc(sizeof(Snake));
   self->tail = self->head = newNode(headPosition, NULL);
-  self->direction = rand() % (WEST + 1);
   self->length = 1;
   return self;
 }
