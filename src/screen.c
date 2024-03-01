@@ -148,6 +148,8 @@ bool prepareGame(Screen *self, Snake *snake) {
 
   nodelay(stdscr, false);
   // Get the initial direction of the snake
+
+getUserInput:
   switch (getch()) {
   case 'w':
   case 'k':
@@ -171,6 +173,8 @@ bool prepareGame(Screen *self, Snake *snake) {
     break;
   case 'q':
     return true;
+  default:
+    goto getUserInput;
   }
 
   mvhline(self->offset.y + self->mapHeight + 2, self->offset.x, ' ',
