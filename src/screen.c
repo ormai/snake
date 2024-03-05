@@ -91,6 +91,13 @@ bool insideBoundaries(const Screen *self, const Snake *snake) {
 }
 
 void spawnOrb(Screen *self) {
+  /* This is a critical point. With a big enough map and when the Snake is
+   * short there is no problem. But when progressing towards the completion of
+   * the game the app will probably stall, trying to randomly get a correct position
+   * for the orb. One solution I thought is creating a dynamic structure that
+   * holds the set of current available Points to choose from to spawn a new orb.
+   * But this is a lot of code and could slow things down anyway. So I will
+   * leave the problem open for now. */
   do {
     self->orb.x = rand() % (self->mapWidth + 1);
     self->orb.y = rand() % (self->mapHeight + 1);
