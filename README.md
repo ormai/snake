@@ -1,10 +1,8 @@
 The game of [snake](https://en.wikipedia.org/wiki/Snake_(video_game)) implemented in C using [ncurses](https://en.wikipedia.org/wiki/Ncurses).
 
-<p align="center">
-    <img src="demo.gif">
-</p>
+![Video demonstration](demo.gif)
 
-The game is little (around 400 lines of code) and the code is commented.
+The game is little (around 500 lines of code) and the code is commented.
 
 To build on Debian you need `git`, `make`, `gcc`, `ncurses-dev`. Then run
 
