@@ -20,12 +20,12 @@
 #include "screen.h"
 #include "snake.h"
 
-static void resetGame(Screen *screen, Snake *snake, Point *collision,
+static void resetGame(Screen **screen, Snake **snake, Point *collision,
                       float *progress) {
-  destroyScreen(screen);
-  screen = newScreen();
-  destroySnake(snake);
-  snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
+  destroyScreen(*screen);
+  *screen = newScreen();
+  destroySnake(*snake);
+  *snake = newSnake((Point){(*screen)->mapWidth / 2, (*screen)->mapHeight / 2});
   *collision = (Point){-1, -1};
   *progress = 0.0;
 }
@@ -89,7 +89,7 @@ int main(void) {
 
       if (snake->length == screen->playingSurface) { // Check for win
         quit = dialog(screen, WIN, &difficulty, snake->length, (Point){0, 0});
-        resetGame(screen, snake, &collision, &progress);
+        resetGame(&screen, &snake, &collision, &progress);
         if (!quit) {
           quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
           if (!quit)
@@ -108,7 +108,7 @@ int main(void) {
 
     if ((wallCollision || selfCollision(snake, &collision)) &&
         !(quit = dialog(screen, OVER, &difficulty, snake->length, collision))) {
-      resetGame(screen, snake, &collision, &progress);
+      resetGame(&screen, &snake, &collision, &progress);
       prepareGame(screen, snake);
     }
 
