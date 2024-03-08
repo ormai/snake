@@ -32,7 +32,6 @@ static void resetGame(Screen **screen, Snake **snake, Point *collision,
 
 int main(void) {
   initializeNcurses();
-  init_color(8, 721, 733, 149); // #B8BB26 color for the head of the Snake
 
   const struct timespec delayMin = {0, 33333333L}, delayMedium = {0, 50000000L},
                         delayMax = {0, 83333333L},

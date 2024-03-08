@@ -99,8 +99,8 @@ void advance(Snake *self) {
 }
 
 void changeDirection(Snake *self, Direction newDirection) {
-  // Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
-  // and vice versa when the Snake is longer than 1
+  /* Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
+   * and vice versa when the Snake is longer than 1. */
   if (newDirection != self->direction &&
       !(self->length > 1 && newDirection == (self->direction + 2) % (WEST + 1)))
     self->direction = newDirection;
