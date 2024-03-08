@@ -1,5 +1,5 @@
 .PHONY: all setup clean test
-LDLIBS := -lncursesw
+LDLIBS := -lncurses
 OBJECTS := build/snake.o build/screen.o
 CFLAGS := -O2
 

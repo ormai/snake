@@ -12,10 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
+#include <unistd.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <threads.h>
+#include <pthread.h>
 
 #include "screen.h"
 #include "snake.h"
@@ -113,19 +114,25 @@ int main(void) {
 
     switch (difficulty) {
     case INCREMENTAL: {
+      long usecs = (delayMax.tv_nsec - (unsigned)(delayDiff.tv_nsec * progress)) / 1000.0;
       const struct timespec delayIncrement = {
-          0, delayMax.tv_nsec - (unsigned)(delayDiff.tv_nsec * progress)};
-      thrd_sleep(&delayIncrement, NULL);
+          0, usecs};
+      usleep(usecs);
+      //thrd_sleep(&delayIncrement, NULL);
       break;
     }
     case EASY:
-      thrd_sleep(&delayMax, NULL); // 12 fps
+      usleep(delayMax.tv_nsec / 1000.0);
+      //thrd_sleep(&delayMax, NULL); // 12 fps
       break;
     case MEDIUM:
-      thrd_sleep(&delayMedium, NULL); // 20 fps
+      usleep(delayMedium.tv_nsec / 1000.0);
+      //thrd_sleep(&delayMedium, NULL); // 20 fps
       break;
     case HARD:
-      thrd_sleep(&delayMin, NULL); // 30 fps
+      usleep(delayMin.tv_nsec / 1000.0);
+      //thrd_sleep(&delayMin, NULL); // 30 fps
+      break;
     }
   }
 
