@@ -63,14 +63,15 @@ void initializeNcurses(void) {
   curs_set(0);              // Make the cursor invisible
   start_color();            // Have some colors
   use_default_colors();
+  init_color(8, 721, 733, 149); // #B8BB26 color for the head of the Snake
 }
 
 // Translate an x coordinate to display on the Screen.
 // This is because two cells are used to display one point: "██". When handling
-// widths and x coordinates half as many as there are on the screen are
+// widths and x coordinates half as many cells as there are on the screen are
 // considered. So when it comes to representing those coordinates it is as if
 // the screen is _one cell yes, the next no, one cell yes, the next no..._
-// █ █ █ █ █ █. To represent x = 4 on the screen x must become 9
+// █ █ █ █ █ █. To represent x = 4 on the screen x must become 9.
 static int translate(const int x) { return x + x + 1; }
 
 // Color is one of the eight terminal colors provided by ncurses.
@@ -93,11 +94,11 @@ bool insideBoundaries(const Screen *self, const Snake *snake) {
 void spawnOrb(Screen *self) {
   /* This is a critical point. With a big enough map and when the Snake is
    * short there is no problem. But when progressing towards the completion of
-   * the game the app will probably stall, trying to randomly get a correct position
-   * for the orb. One solution I thought is creating a dynamic structure that
-   * holds the set of current available Points to choose from to spawn a new orb.
-   * But this is a lot of code and could slow things down anyway. So I will
-   * leave the problem open for now. */
+   * the game the app will probably stall, trying to randomly get a correct
+   * position for the orb. One solution I thought is creating a dynamic
+   * structure that holds the set of current available Points to choose from to
+   * spawn a new orb. But this is a lot of code and could slow things down
+   * anyway. So I will leave the problem open for now. */
   do {
     self->orb.x = rand() % (self->mapWidth + 1);
     self->orb.y = rand() % (self->mapHeight + 1);
@@ -119,6 +120,7 @@ void drawWalls(const Screen *self) {
               southEasth = {translate(self->mapWidth) + self->offset.x + 2,
                             self->mapHeight + self->offset.y + 1};
 
+  // Not able to use mvhline() and mvvline() because of the wide characters
   for (int i = northWest.x; i <= southEasth.x; ++i) {
     mvprintw(northWest.y, i, "▄");
     mvprintw(southEasth.y, i, "▀");
@@ -134,14 +136,14 @@ void draw(const Screen *self, Snake *snake) {
   if (!snake->growing) {
     mvprintw(snake->oldTail.y + self->offset.y,
              translate(snake->oldTail.x) + self->offset.x, "  ");
-    self->grid[snake->oldTail.y][snake->oldTail.x] = 0;
+    self->grid[snake->oldTail.y][snake->oldTail.x] = 0; // mark it free
   }
 
   // Draw the new head added by Snake::advance()
   drawPoint(self, snake->head->pos, 8);
   if (snake->head->prev != NULL)
     drawPoint(self, snake->head->prev->pos, COLOR_GREEN);
-  self->grid[snake->head->pos.y][snake->head->pos.x] = 1;
+  self->grid[snake->head->pos.y][snake->head->pos.x] = 1; // mark it occupied
 }
 
 bool prepareGame(Screen *self, Snake *snake) {
@@ -154,9 +156,8 @@ bool prepareGame(Screen *self, Snake *snake) {
            "Move in any direction to start the game.");
 
   nodelay(stdscr, false);
-  // Get the initial direction of the snake
 
-getUserInput:
+getUserInput: // Get the initial direction of the snake
   switch (getch()) {
   case 'w':
   case 'k':
@@ -185,7 +186,7 @@ getUserInput:
   }
 
   mvhline(self->offset.y + self->mapHeight + 2, self->offset.x, ' ',
-          self->width);  // Hide tip at the bottom
+          self->width);  // Hide suggestion at the bottom
   nodelay(stdscr, true); // getch() doesn't wait for input
   return false;
 }
@@ -299,7 +300,7 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
           "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
 
   Snake *doodle = NULL; // Snake decoration on welcome screen
-  char **fmt;           // Select the appropriate format
+  char **fmt;           // Select the appropriate format string
   // Add right offset so that changing difficulty doesn't interfere with doodle
   const int diffFmtX = begin.x + (kind == WELCOME ? 3 : 0);
 
