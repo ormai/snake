@@ -19,7 +19,7 @@
 
 typedef enum { NORTH, EAST, SOUTH, WEST } Direction;
 
-// Coordinates the top left corner of the Screen
+// Coordinates from the top left corner of the Screen/playing field
 typedef struct point {
   int x, y;
 } Point;
@@ -33,7 +33,7 @@ typedef struct node {
 Node *newNode(const Point spawnPosition, Node *prev);
 void destroyNode(Node *self);
 
-// The Snake is modelled by a linked list
+// The Snake is modelled by a doubly linked list
 typedef struct snake {
   unsigned length; // Also the score
   Node *head, *tail;
