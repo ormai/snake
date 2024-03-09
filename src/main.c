@@ -12,11 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
-#include <unistd.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include <unistd.h>
 
 #include "screen.h"
 #include "snake.h"
@@ -33,10 +32,8 @@ static void resetGame(Screen **screen, Snake **snake, Point *collision,
 
 int main(void) {
   initializeNcurses();
-
-  const struct timespec delayMin = {0, 33333333L}, delayMedium = {0, 50000000L},
-                        delayMax = {0, 83333333L},
-                        delayDiff = {0, delayMax.tv_nsec - delayMin.tv_nsec};
+  const useconds_t delayMin = 33333, delayMedium = 50000, delayMax = 83333,
+                   delayDiff = delayMax - delayMin;
   Point collision = {-1, -1};
   float progress = 0.0;
   Difficulty difficulty = INCREMENTAL;
@@ -114,24 +111,17 @@ int main(void) {
 
     switch (difficulty) {
     case INCREMENTAL: {
-      long usecs = (delayMax.tv_nsec - (unsigned)(delayDiff.tv_nsec * progress)) / 1000.0;
-      const struct timespec delayIncrement = {
-          0, usecs};
-      usleep(usecs);
-      //thrd_sleep(&delayIncrement, NULL);
+      usleep(delayMax - (useconds_t)(delayDiff * progress));
       break;
     }
     case EASY:
-      usleep(delayMax.tv_nsec / 1000.0);
-      //thrd_sleep(&delayMax, NULL); // 12 fps
+      usleep(delayMax); // 12 fps
       break;
     case MEDIUM:
-      usleep(delayMedium.tv_nsec / 1000.0);
-      //thrd_sleep(&delayMedium, NULL); // 20 fps
+      usleep(delayMedium); // 20 fps
       break;
     case HARD:
-      usleep(delayMin.tv_nsec / 1000.0);
-      //thrd_sleep(&delayMin, NULL); // 30 fps
+      usleep(delayMin); // 30 fps
       break;
     }
   }
