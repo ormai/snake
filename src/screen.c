@@ -12,12 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
-#include <unistd.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include <unistd.h>
 
 #include "screen.h"
 #include "snake.h"
@@ -205,21 +204,21 @@ static void updateDoodle(Snake *doodle, const Point beginDialog,
       break;
     }
     doodle->direction = WEST;
-    //    [[fallthrough]];
+    /* fallthrough */
   case WEST:
     if (doodle->head->pos.x > beginDialog.x) {
       doodle->head->pos.x -= 2;
       break;
     }
     doodle->direction = SOUTH;
-    //    [[fallthrough]];
+    /* fallthrough */
   case SOUTH:
     if (doodle->head->pos.y - 1 < beginDialog.y + dialogHeight) {
       ++doodle->head->pos.y;
       break;
     }
     doodle->direction = EAST;
-    //    [[fallthrough]];
+    /* fallthrough */
   case EAST:
     if (doodle->head->pos.x < beginDialog.x + dialogWidth - 1) {
       doodle->head->pos.x += 2;
@@ -238,7 +237,6 @@ static void updateDoodle(Snake *doodle, const Point beginDialog,
   }
   mvprintw(doodle->oldTail.y, doodle->oldTail.x, "  ");
   usleep(33333L);
-  //  thrd_sleep(&(const struct timespec){0, 33333333L}, NULL); // 30 fps
 }
 
 bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,

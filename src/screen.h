@@ -24,7 +24,7 @@ typedef enum { INCREMENTAL, EASY, MEDIUM, HARD } Difficulty;
 typedef struct screen {
   int width, height;       // Of the terminal window, in cells
   int mapWidth, mapHeight; // The map occupies a fraction of the screen
-  int playingSurface;      // One could call this the map
+  unsigned playingSurface; // One could call this the map
   Point offset;            // An offset from the top-left for the map
   Point orb;               // The orb to capture
   int **grid;              // To keep track of the occupied cells
