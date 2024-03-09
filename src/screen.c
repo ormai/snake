@@ -300,7 +300,7 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
           "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
 
   Snake *doodle = NULL; // Snake decoration on welcome screen
-  char **fmt;           // Select the appropriate format string
+  char **fmt = NULL;    // Select the appropriate format string
   // Add right offset so that changing difficulty doesn't interfere with doodle
   const int diffFmtX = begin.x + (kind == WELCOME ? 3 : 0);
 
