@@ -86,27 +86,28 @@ int main(void) {
 
       if (snake->length == screen->playingSurface) { // Check for win
         quit = dialog(screen, WIN, &difficulty, snake->length, (Point){0, 0});
-        resetGame(&screen, &snake, &collision, &progress);
         if (!quit) {
           quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
-          if (!quit)
-            prepareGame(screen, snake);
+          if (!quit) {
+            resetGame(&screen, &snake, &collision, &progress);
+            quit = prepareGame(screen, snake);
+          }
         }
       }
     }
 
     wallCollision = !insideBoundaries(screen, snake);
-    if (!wallCollision)
-      draw(screen, snake);
-    else // Highlight the collision in red
+    if (wallCollision)
       drawPoint(screen,
                 snake->length > 1 ? snake->head->prev->pos : snake->oldTail,
                 COLOR_RED);
+    else
+      draw(screen, snake);
 
     if ((wallCollision || selfCollision(snake, &collision)) &&
         !(quit = dialog(screen, OVER, &difficulty, snake->length, collision))) {
       resetGame(&screen, &snake, &collision, &progress);
-      prepareGame(screen, snake);
+      quit = prepareGame(screen, snake);
     }
 
     switch (difficulty) {
@@ -129,5 +130,5 @@ int main(void) {
   destroySnake(snake);
   destroyScreen(screen);
   endwin();
-  exit(0);
+  exit(EXIT_SUCCESS);
 }
