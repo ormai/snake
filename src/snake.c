@@ -17,40 +17,40 @@
 
 #include "snake.h"
 
-Node *newNode(const Point spawnPosition, Node *prev) {
+Node *new_node(const Point spawn_position, Node *prev) {
   Node *self = malloc(sizeof(Node));
-  self->pos = spawnPosition;
+  self->pos = spawn_position;
   self->prev = prev;
   self->next = NULL;
   return self;
 }
 
-void destroyNode(Node *self) {
+void destroy_node(Node *self) {
   if (self != NULL) {
     free(self);
     self = NULL;
   }
 }
 
-Snake *newSnake(const Point headPosition) {
+Snake *new_snake(const Point head_position) {
   Snake *self = calloc(1, sizeof(Snake));
-  self->tail = self->head = newNode(headPosition, NULL);
+  self->tail = self->head = new_node(head_position, NULL);
   self->length = 1;
   self->growing = false;
   return self;
 }
 
-void destroySnake(Snake *self) {
+void destroy_snake(Snake *self) {
   if (self != NULL) {
     for (Node *it = self->head; it != NULL; it = it->prev)
-      destroyNode(it->next);
-    destroyNode(self->tail);
+      destroy_node(it->next);
+    destroy_node(self->tail);
     free(self);
     self = NULL;
   }
 }
 
-bool selfCollision(const Snake *self, Point *collision) {
+bool self_collision(const Snake *self, Point *collision) {
   for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
     for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev)
       if (it1->pos.x == it2->pos.x && it1->pos.y == it2->pos.y) {
@@ -73,11 +73,11 @@ void ouroboros(Snake *self) {
 
 void advance(Snake *self) {
   if (!self->growing)
-    self->oldTail = self->tail->pos;
+    self->old_tail = self->tail->pos;
 
   if (self->growing) {
     self->growing = false;
-    self->head = self->head->next = newNode(self->head->pos, self->head);
+    self->head = self->head->next = new_node(self->head->pos, self->head);
   } else if (self->length > 1)
     ouroboros(self);
 
@@ -98,10 +98,10 @@ void advance(Snake *self) {
   }
 }
 
-void changeDirection(Snake *self, Direction newDirection) {
+void change_direction(Snake *self, Direction direction) {
   /* Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
    * and vice versa when the Snake is longer than 1. */
-  if (newDirection != self->direction &&
-      !(self->length > 1 && newDirection == (self->direction + 2) % (WEST + 1)))
-    self->direction = newDirection;
+  if (direction != self->direction &&
+      !(self->length > 1 && direction == (self->direction + 2) % (WEST + 1)))
+    self->direction = direction;
 }
