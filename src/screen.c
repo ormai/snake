@@ -21,29 +21,29 @@
 #include "screen.h"
 #include "snake.h"
 
-Screen *newScreen(void) {
+Screen *new_screen(void) {
   Screen *self = malloc(sizeof(Screen));
 
   self->width = getmaxx(stdscr) - 1;
   self->height = getmaxy(stdscr) - 1;
-  self->mapWidth = self->width / 4; // Further down is explained why 4
-  self->mapHeight = self->height * 2 / 3;
-  self->playingSurface = self->mapWidth * self->mapHeight;
+  self->map_width = self->width / 4; // Further down is explained why 4
+  self->map_height = self->height * 2 / 3;
+  self->playing_surface = self->map_width * self->map_height;
 
-  self->offset = (Point){(self->width - self->mapWidth * 2) / 2,
-                         (self->height - self->mapHeight) / 2};
+  self->offset = (Point){(self->width - self->map_width * 2) / 2,
+                         (self->height - self->map_height) / 2};
 
-  self->grid = malloc(sizeof(int * [self->mapHeight + 1]));
-  for (int i = 0; i <= self->mapHeight; ++i)
-    self->grid[i] = calloc(self->mapWidth + 1, sizeof(int));
+  self->grid = malloc(sizeof(int * [self->map_height + 1]));
+  for (int i = 0; i <= self->map_height; ++i)
+    self->grid[i] = calloc(self->map_width + 1, sizeof(int));
 
   return self;
 }
 
-void destroyScreen(Screen *self) {
+void destroy_screen(Screen *self) {
   if (self != NULL) {
     if (self->grid != NULL) {
-      for (int i = 0; i <= self->mapHeight; ++i)
+      for (int i = 0; i <= self->map_height; ++i)
         free(self->grid[i]);
       free(self->grid);
     }
@@ -52,7 +52,7 @@ void destroyScreen(Screen *self) {
   }
 }
 
-void initializeNcurses(void) {
+void initialize_ncurses(void) {
   setlocale(LC_ALL, ""); // Use the locale of the environment
   initscr();
   cbreak(); // Disable keyboard input buffering, keys are immediately evaluated
@@ -76,22 +76,22 @@ static int translate(const int x) { return x + x + 1; }
 
 // Color is one of the eight terminal colors provided by ncurses.
 // COLOR_BLACK = 0 is the current fg color (i.e. actual WHITE)
-static void setColor(const int color) {
+static void set_color(const int color) {
   init_pair(color, color, -1);
   attrset(COLOR_PAIR(color));
 }
 
-void drawPoint(const Screen *self, const Point pos, const int color) {
-  setColor(color);
+void draw_point(const Screen *self, const Point pos, const int color) {
+  set_color(color);
   mvprintw(pos.y + self->offset.y, translate(pos.x) + self->offset.x, "██");
 }
 
-bool insideBoundaries(const Screen *self, const Snake *snake) {
-  return snake->head->pos.x <= self->mapWidth && snake->head->pos.x >= 0 &&
-         snake->head->pos.y <= self->mapHeight && snake->head->pos.y >= 0;
+bool inside_boundaries(const Screen *self, const Snake *snake) {
+  return snake->head->pos.x <= self->map_width && snake->head->pos.x >= 0 &&
+         snake->head->pos.y <= self->map_height && snake->head->pos.y >= 0;
 }
 
-void spawnOrb(Screen *self) {
+void spawn_orb(Screen *self) {
   /* This is a critical point. With a big enough map and when the Snake is
    * short there is no problem. But when progressing towards the completion of
    * the game the app will probably stall, trying to randomly get a correct
@@ -100,25 +100,25 @@ void spawnOrb(Screen *self) {
    * spawn a new orb. But this is a lot of code and could slow things down
    * anyway. So I will leave the problem open for now. */
   do {
-    self->orb.x = rand() % (self->mapWidth + 1);
-    self->orb.y = rand() % (self->mapHeight + 1);
+    self->orb.x = rand() % (self->map_width + 1);
+    self->orb.y = rand() % (self->map_height + 1);
   } while (self->grid[self->orb.y][self->orb.x] == 1);
 
-  drawPoint(self, self->orb, COLOR_MAGENTA);
+  draw_point(self, self->orb, COLOR_MAGENTA);
 }
 
-void updateScore(const Screen *self, const unsigned score) {
-  setColor(0);
+void update_score(const Screen *self, const unsigned score) {
+  set_color(0);
   mvprintw(self->offset.y - 2, self->offset.x, "Score: %d", score);
 }
 
-void drawWalls(const Screen *self) {
+void draw_walls(const Screen *self) {
   erase(); // Clean the terminal
-  setColor(COLOR_YELLOW);
+  set_color(COLOR_YELLOW);
 
   const Point northWest = {self->offset.x, self->offset.y - 1},
-              southEasth = {translate(self->mapWidth) + self->offset.x + 2,
-                            self->mapHeight + self->offset.y + 1};
+              southEasth = {translate(self->map_width) + self->offset.x + 2,
+                            self->map_height + self->offset.y + 1};
 
   // Not able to use mvhline() and mvvline() because of the wide characters
   for (int i = northWest.x; i <= southEasth.x; ++i) {
@@ -134,30 +134,30 @@ void drawWalls(const Screen *self) {
 void draw(const Screen *self, Snake *snake) {
   // Cover the old tail with a blank if the Snake has not grown
   if (!snake->growing) {
-    mvprintw(snake->oldTail.y + self->offset.y,
-             translate(snake->oldTail.x) + self->offset.x, "  ");
-    self->grid[snake->oldTail.y][snake->oldTail.x] = 0; // mark it free
+    mvprintw(snake->old_tail.y + self->offset.y,
+             translate(snake->old_tail.x) + self->offset.x, "  ");
+    self->grid[snake->old_tail.y][snake->old_tail.x] = 0; // mark it free
   }
 
   // Draw the new head added by Snake::advance()
-  drawPoint(self, snake->head->pos, 8);
+  draw_point(self, snake->head->pos, 8);
   if (snake->head->prev != NULL)
-    drawPoint(self, snake->head->prev->pos, COLOR_GREEN);
+    draw_point(self, snake->head->prev->pos, COLOR_GREEN);
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1; // mark it occupied
 }
 
-bool prepareGame(Screen *self, Snake *snake) {
-  drawWalls(self);
-  spawnOrb(self);
-  updateScore(self, snake->length);
-  drawPoint(self, snake->head->pos, 8); // Draw the head of the snake
-  setColor(0);                          // Tip at the bottom
-  mvprintw(self->offset.y + self->mapHeight + 2, self->offset.x,
+bool prepare_game(Screen *self, Snake *snake) {
+  draw_walls(self);
+  spawn_orb(self);
+  update_score(self, snake->length);
+  draw_point(self, snake->head->pos, 8); // Draw the head of the snake
+  set_color(0);                          // Tip at the bottom
+  mvprintw(self->offset.y + self->map_height + 2, self->offset.x,
            "Move in any direction to start the game.");
 
   nodelay(stdscr, false);
 
-getUserInput: // Get the initial direction of the snake
+get_user_input: // Get the initial direction of the snake
   switch (getch()) {
   case 'w':
   case 'k':
@@ -182,45 +182,45 @@ getUserInput: // Get the initial direction of the snake
   case 'q':
     return true;
   default:
-    goto getUserInput;
+    goto get_user_input;
   }
 
-  mvhline(self->offset.y + self->mapHeight + 2, self->offset.x, ' ',
+  mvhline(self->offset.y + self->map_height + 2, self->offset.x, ' ',
           self->width);  // Hide suggestion at the bottom
   nodelay(stdscr, true); // getch() doesn't wait for input
   return false;
 }
 
-static void updateDoodle(Snake *doodle, const Point beginDialog,
-                         const int dialogHeight, const int dialogWidth) {
-  doodle->oldTail = doodle->tail->pos;
+static void update_doodle(Snake *doodle, const Point dialog_begin,
+                          const int dialog_height, const int dialog_width) {
+  doodle->old_tail = doodle->tail->pos;
   ouroboros(doodle); // Tail becomes the head
 
   // Head moves forward
   switch (doodle->direction) {
   case NORTH:
-    if (doodle->head->pos.y >= beginDialog.y) {
+    if (doodle->head->pos.y >= dialog_begin.y) {
       --doodle->head->pos.y;
       break;
     }
     doodle->direction = WEST;
     /* fallthrough */
   case WEST:
-    if (doodle->head->pos.x > beginDialog.x) {
+    if (doodle->head->pos.x > dialog_begin.x) {
       doodle->head->pos.x -= 2;
       break;
     }
     doodle->direction = SOUTH;
     /* fallthrough */
   case SOUTH:
-    if (doodle->head->pos.y - 1 < beginDialog.y + dialogHeight) {
+    if (doodle->head->pos.y - 1 < dialog_begin.y + dialog_height) {
       ++doodle->head->pos.y;
       break;
     }
     doodle->direction = EAST;
     /* fallthrough */
   case EAST:
-    if (doodle->head->pos.x < beginDialog.x + dialogWidth - 1) {
+    if (doodle->head->pos.x < dialog_begin.x + dialog_width - 1) {
       doodle->head->pos.x += 2;
       break;
     }
@@ -229,22 +229,22 @@ static void updateDoodle(Snake *doodle, const Point beginDialog,
   }
 
   // Draw the head, hide the old tail, and sleep
-  setColor(8);
+  set_color(8);
   mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
   if (doodle->head->prev != NULL) {
-    setColor(COLOR_GREEN);
+    set_color(COLOR_GREEN);
     mvprintw(doodle->head->prev->pos.y, doodle->head->prev->pos.x, "██");
   }
-  mvprintw(doodle->oldTail.y, doodle->oldTail.x, "  ");
+  mvprintw(doodle->old_tail.y, doodle->old_tail.x, "  ");
   usleep(33333L);
 }
 
 bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
             const unsigned score, const Point collision) {
-  static const int dialogHeight = 16, dialogWidth = 57;
-  const Point begin = {self->offset.x + self->mapWidth - dialogWidth / 2 + 1,
-                       self->offset.y + self->mapHeight / 2 - dialogHeight / 2 +
-                           1};
+  static const int dialog_height = 16, dialog_width = 57;
+  const Point begin = {self->offset.x + self->map_width - dialog_width / 2 + 1,
+                       self->offset.y + self->map_height / 2 -
+                           dialog_height / 2 + 1};
   static char
       *diff[] = {"  incremental >", "   < easy >    ", "  < medium >   ",
                  "   < hard      "},
@@ -301,18 +301,19 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
 
   Snake *doodle = NULL; // Snake decoration on welcome screen
   char **fmt = NULL;    // Select the appropriate format string
+
   // Add right offset so that changing difficulty doesn't interfere with doodle
-  const int diffFmtX = begin.x + (kind == WELCOME ? 3 : 0);
+  const int difficulty_offset_x = begin.x + (kind == WELCOME ? 3 : 0);
 
   switch (kind) {
   case WELCOME:
     fmt = welcome;
-    doodle = newSnake((Point){begin.x, begin.y + 2});
+    doodle = new_snake((Point){begin.x, begin.y + 2});
     doodle->direction = SOUTH;
-    setColor(COLOR_GREEN);
+    set_color(COLOR_GREEN);
     for (int i = 0; i < 7; ++i) { // Make it long 7
       doodle->head->next =
-          newNode((Point){begin.x, doodle->head->pos.y + 1}, doodle->head);
+          new_node((Point){begin.x, doodle->head->pos.y + 1}, doodle->head);
       doodle->head = doodle->head->next;
       mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
     }
@@ -320,7 +321,7 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
   case OVER:
     fmt = over;
     if (collision.x != -1 && collision.y != -1)
-      drawPoint(self, collision, COLOR_RED);
+      draw_point(self, collision, COLOR_RED);
     // Hide score count above the playing field
     mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
     nodelay(stdscr, false);
@@ -332,12 +333,12 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
   }
 
   // Draw the dialog
-  setColor(0);
-  for (int y = begin.y, i = 0; y < begin.y + dialogHeight; ++y, ++i)
+  set_color(0);
+  for (int y = begin.y, i = 0; y < begin.y + dialog_height; ++y, ++i)
     if (kind != WELCOME && i == 9) // Plug in the score
       mvprintw(y, begin.x, fmt[i], score);
     else if (i == 11) // Plug in the difficulty
-      mvprintw(y, diffFmtX, fmt[i], diff[*difficulty]);
+      mvprintw(y, difficulty_offset_x, fmt[i], diff[*difficulty]);
     else
       mvprintw(y, begin.x, "%s", fmt[i]);
 
@@ -345,32 +346,32 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
     switch (getch()) {
     case '\n':
     case 'y': {
-      destroySnake(doodle);
+      destroy_snake(doodle);
       return false;
     }
     case '>':
     case KEY_RIGHT: // increment difficulty
       if (kind != WIN && *difficulty != HARD) {
         ++*difficulty;
-        setColor(0);
-        mvprintw(begin.y + 11, diffFmtX, fmt[11], diff[*difficulty]);
+        set_color(0);
+        mvprintw(begin.y + 11, difficulty_offset_x, fmt[11], diff[*difficulty]);
       }
       break;
     case '<':
     case KEY_LEFT: // decrement difficulty
       if (kind != WIN && *difficulty != INCREMENTAL) {
         --*difficulty;
-        setColor(0);
-        mvprintw(begin.y + 11, diffFmtX, fmt[11], diff[*difficulty]);
+        set_color(0);
+        mvprintw(begin.y + 11, difficulty_offset_x, fmt[11], diff[*difficulty]);
       }
       break;
     case 'n':
     case 'q':
-      destroySnake(doodle);
+      destroy_snake(doodle);
       return true;
     }
 
     if (kind == WELCOME)
-      updateDoodle(doodle, begin, dialogHeight, dialogWidth);
+      update_doodle(doodle, begin, dialog_height, dialog_width);
   }
 }
