@@ -20,32 +20,34 @@
 #include "screen.h"
 #include "snake.h"
 
-static void resetGame(Screen **screen, Snake **snake, Point *collision,
-                      float *progress) {
-  destroyScreen(*screen);
-  *screen = newScreen();
-  destroySnake(*snake);
-  *snake = newSnake((Point){(*screen)->mapWidth / 2, (*screen)->mapHeight / 2});
+static void reset_game(Screen **screen, Snake **snake, Point *collision,
+                       float *progress) {
+  destroy_screen(*screen);
+  *screen = new_screen();
+  destroy_snake(*snake);
+  *snake =
+      new_snake((Point){(*screen)->map_width / 2, (*screen)->map_height / 2});
   *collision = (Point){-1, -1};
   *progress = 0.0;
 }
 
 int main(void) {
-  initializeNcurses();
-  const useconds_t delayMin = 33333, delayMedium = 50000, delayMax = 83333,
-                   delayDiff = delayMax - delayMin;
+  initialize_ncurses();
+  const useconds_t delay_min = 33333, delay_medium = 50000, delay_max = 83333,
+                   delayDiff = delay_max - delay_min;
   Point collision = {-1, -1};
   float progress = 0.0;
   Difficulty difficulty = INCREMENTAL;
-  bool wallCollision = false;
+  bool wall_collision = false;
 
   // Instantiate the objects
-  Screen *screen = newScreen();
-  Snake *snake = newSnake((Point){screen->mapWidth / 2, screen->mapHeight / 2});
+  Screen *screen = new_screen();
+  Snake *snake =
+      new_snake((Point){screen->map_width / 2, screen->map_height / 2});
 
   bool quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
   if (!quit)
-    quit = prepareGame(screen, snake);
+    quit = prepare_game(screen, snake);
 
   // Main loop
   while (!quit) {
@@ -53,22 +55,22 @@ int main(void) {
     case 'w':
     case 'k':
     case KEY_UP:
-      changeDirection(snake, NORTH);
+      change_direction(snake, NORTH);
       break;
     case 'l':
     case 'd':
     case KEY_RIGHT:
-      changeDirection(snake, EAST);
+      change_direction(snake, EAST);
       break;
     case 'j':
     case 's':
     case KEY_DOWN:
-      changeDirection(snake, SOUTH);
+      change_direction(snake, SOUTH);
       break;
     case 'h':
     case 'a':
     case KEY_LEFT:
-      changeDirection(snake, WEST);
+      change_direction(snake, WEST);
       break;
     case 'q':
       quit = true;
@@ -80,55 +82,55 @@ int main(void) {
         snake->head->pos.y == screen->orb.y) {
       snake->growing = true;
       ++snake->length;
-      spawnOrb(screen);
-      updateScore(screen, snake->length);
-      progress = (float)snake->length / screen->playingSurface;
+      spawn_orb(screen);
+      update_score(screen, snake->length);
+      progress = (float)snake->length / screen->playing_surface;
 
-      if (snake->length == screen->playingSurface) { // Check for win
+      if (snake->length == screen->playing_surface) { // Check for win
         quit = dialog(screen, WIN, &difficulty, snake->length, (Point){0, 0});
         if (!quit) {
           quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
           if (!quit) {
-            resetGame(&screen, &snake, &collision, &progress);
-            quit = prepareGame(screen, snake);
+            reset_game(&screen, &snake, &collision, &progress);
+            quit = prepare_game(screen, snake);
           }
         }
       }
     }
 
-    wallCollision = !insideBoundaries(screen, snake);
-    if (wallCollision)
-      drawPoint(screen,
-                snake->length > 1 ? snake->head->prev->pos : snake->oldTail,
-                COLOR_RED);
+    wall_collision = !inside_boundaries(screen, snake);
+    if (wall_collision)
+      draw_point(screen,
+                 snake->length > 1 ? snake->head->prev->pos : snake->old_tail,
+                 COLOR_RED);
     else
       draw(screen, snake);
 
-    if ((wallCollision || selfCollision(snake, &collision)) &&
+    if ((wall_collision || self_collision(snake, &collision)) &&
         !(quit = dialog(screen, OVER, &difficulty, snake->length, collision))) {
-      resetGame(&screen, &snake, &collision, &progress);
-      quit = prepareGame(screen, snake);
+      reset_game(&screen, &snake, &collision, &progress);
+      quit = prepare_game(screen, snake);
     }
 
     switch (difficulty) {
     case INCREMENTAL: {
-      usleep(delayMax - (useconds_t)(delayDiff * progress));
+      usleep(delay_max - (useconds_t)(delayDiff * progress));
       break;
     }
     case EASY:
-      usleep(delayMax); // 12 fps
+      usleep(delay_max); // 12 fps
       break;
     case MEDIUM:
-      usleep(delayMedium); // 20 fps
+      usleep(delay_medium); // 20 fps
       break;
     case HARD:
-      usleep(delayMin); // 30 fps
+      usleep(delay_min); // 30 fps
       break;
     }
   }
 
-  destroySnake(snake);
-  destroyScreen(screen);
+  destroy_snake(snake);
+  destroy_screen(screen);
   endwin();
   exit(EXIT_SUCCESS);
 }

@@ -22,36 +22,36 @@
 typedef enum { INCREMENTAL, EASY, MEDIUM, HARD } Difficulty;
 
 typedef struct screen {
-  int width, height;       // Of the terminal window, in cells
-  int mapWidth, mapHeight; // The map occupies a fraction of the screen
-  unsigned playingSurface; // One could call this the map
-  Point offset;            // An offset from the top-left for the map
-  Point orb;               // The orb to capture
-  int **grid;              // To keep track of the occupied cells
+  int width, height;         // Of the terminal window, in cells
+  int map_width, map_height; // The map occupies a fraction of the screen
+  unsigned playing_surface;  // One could call this the map
+  Point offset;              // An offset from the top-left for the map
+  Point orb;                 // The orb to capture
+  int **grid;                // To keep track of the occupied cells
 } Screen;
 
-Screen *newScreen(void);
-void destroyScreen(Screen *self);
+Screen *new_screen(void);
+void destroy_screen(Screen *self);
 
-void initializeNcurses(void);
+void initialize_ncurses(void);
 
-void drawWalls(const Screen *self);
+void draw_walls(const Screen *self);
 
-void updateScore(const Screen *self, const unsigned score);
+void update_score(const Screen *self, const unsigned score);
 
 // Spawn a new orb and show it on the Screen
-void spawnOrb(Screen *self);
+void spawn_orb(Screen *self);
 
 // Check for collisions with the walls
-bool insideBoundaries(const Screen *self, const Snake *snake);
+bool inside_boundaries(const Screen *self, const Snake *snake);
 
 // Draw the Snake on to the Screen
 void draw(const Screen *self, Snake *snake);
 
-bool prepareGame(Screen *self, Snake *snake);
+bool prepare_game(Screen *self, Snake *snake);
 
 // Place a colored point ("██") on the map.
-void drawPoint(const Screen *self, const Point pos, const int color);
+void draw_point(const Screen *self, const Point pos, const int color);
 
 typedef enum { WELCOME, OVER, WIN } DialogKind;
 
