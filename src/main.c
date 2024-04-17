@@ -15,7 +15,7 @@
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <time.h>
 
 #include "screen.h"
 #include "snake.h"
@@ -32,14 +32,14 @@ static void reset_game(Screen **screen, Snake **snake, Point *collision,
 }
 
 int main(void) {
-  initialize_ncurses();
-  const useconds_t delay_min = 33333, delay_medium = 50000, delay_max = 83333,
-                   delayDiff = delay_max - delay_min;
+  const struct timespec delay[] = {
+      {0, 83333333}, {0, 83333333}, {0, 50000000}, {0, 33333333}};
   Point collision = {-1, -1};
-  float progress = 0.0;
+  float progress = 0;
   Difficulty difficulty = INCREMENTAL;
   bool wall_collision = false;
 
+  initialize_ncurses();
   // Instantiate the objects
   Screen *screen = new_screen();
   Snake *snake =
@@ -87,19 +87,15 @@ int main(void) {
       progress = (float)snake->length / screen->playing_surface;
 
       if (snake->length == screen->playing_surface) { // Check for win
-        quit = dialog(screen, WIN, &difficulty, snake->length, (Point){0, 0});
-        if (!quit) {
-          quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
-          if (!quit) {
+        if (!(quit = dialog(screen, WIN, &difficulty, snake->length,
+                            (Point){0, 0})))
+          if (!(quit = dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0})))
             reset_game(&screen, &snake, &collision, &progress);
-            quit = prepare_game(screen, snake);
-          }
-        }
+        quit = prepare_game(screen, snake);
       }
     }
 
-    wall_collision = !inside_boundaries(screen, snake);
-    if (wall_collision)
+    if ((wall_collision = !inside_boundaries(screen, snake)))
       draw_point(screen,
                  snake->length > 1 ? snake->head->prev->pos : snake->old_tail,
                  COLOR_RED);
@@ -112,25 +108,17 @@ int main(void) {
       quit = prepare_game(screen, snake);
     }
 
-    switch (difficulty) {
-    case INCREMENTAL: {
-      usleep(delay_max - (useconds_t)(delayDiff * progress));
-      break;
-    }
-    case EASY:
-      usleep(delay_max); // 12 fps
-      break;
-    case MEDIUM:
-      usleep(delay_medium); // 20 fps
-      break;
-    case HARD:
-      usleep(delay_min); // 30 fps
-      break;
-    }
+    if (difficulty == INCREMENTAL)
+      nanosleep(
+          &(const struct timespec){0, delay[EASY].tv_nsec -
+                                          delay[MEDIUM].tv_nsec * progress},
+          NULL);
+    else
+      nanosleep(delay + difficulty, NULL); // &delay[difficulty]
   }
 
   destroy_snake(snake);
   destroy_screen(screen);
   endwin();
-  exit(EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 }
