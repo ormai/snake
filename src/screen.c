@@ -16,7 +16,7 @@
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <time.h>
 
 #include "screen.h"
 #include "snake.h"
@@ -236,7 +236,7 @@ static void update_doodle(Snake *doodle, const Point dialog_begin,
     mvprintw(doodle->head->prev->pos.y, doodle->head->prev->pos.x, "██");
   }
   mvprintw(doodle->old_tail.y, doodle->old_tail.x, "  ");
-  usleep(33333L);
+  nanosleep(&(const struct timespec){0, 33333333}, NULL);
 }
 
 bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
