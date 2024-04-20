@@ -30,28 +30,29 @@ typedef struct screen {
   int **grid;                // To keep track of the occupied cells
 } Screen;
 
-Screen *new_screen(void);
-void destroy_screen(Screen *self);
+Screen *screen_create();
+void screen_destroy(Screen *self);
 
-void initialize_ncurses(void);
+// Initialize ncurses
+void screen_prepare();
 
-void draw_walls(const Screen *self);
+void screen_draw_walls(const Screen *self);
 
-void update_score(const Screen *self, const unsigned score);
+void screen_update_score(const Screen *self, const unsigned score);
 
 // Spawn a new orb and show it on the Screen
-void spawn_orb(Screen *self);
+void screen_spawn_orb(Screen *self);
 
 // Check for collisions with the walls
-bool inside_boundaries(const Screen *self, const Snake *snake);
+bool screen_inside_boundaries(const Screen *self, const Snake *snake);
 
 // Draw the Snake on to the Screen
-void draw(const Screen *self, Snake *snake);
+void screen_draw(const Screen *self, Snake *snake);
 
-bool prepare_game(Screen *self, Snake *snake);
+bool screen_prepare_game(Screen *self, Snake *snake);
 
 // Place a colored point ("██") on the map.
-void draw_point(const Screen *self, const Point pos, const int color);
+void screen_draw_point(const Screen *self, const Point pos, const int color);
 
 typedef enum { WELCOME, OVER, WIN } DialogKind;
 
@@ -59,7 +60,7 @@ typedef enum { WELCOME, OVER, WIN } DialogKind;
 // score is irrelevant when kind is WELCOME, collision is relevant when kind is
 // OVER.
 // Sets the difficulty as chosen by the player when kind is not WIN.
-bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
-            const unsigned score, const Point collision);
+bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
+                   const unsigned score, const Point collision);
 
 #endif // !SCREEN_H

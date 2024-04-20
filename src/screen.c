@@ -17,11 +17,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include <wchar.h>
 
 #include "screen.h"
 #include "snake.h"
 
-Screen *new_screen(void) {
+Screen *screen_create(void) {
   Screen *self = malloc(sizeof(Screen));
 
   self->width = getmaxx(stdscr) - 1;
@@ -40,7 +41,7 @@ Screen *new_screen(void) {
   return self;
 }
 
-void destroy_screen(Screen *self) {
+void screen_destroy(Screen *self) {
   if (self != NULL) {
     if (self->grid != NULL) {
       for (int i = 0; i <= self->map_height; ++i)
@@ -52,7 +53,7 @@ void destroy_screen(Screen *self) {
   }
 }
 
-void initialize_ncurses(void) {
+void screen_prepare(void) {
   setlocale(LC_ALL, ""); // Use the locale of the environment
   initscr();
   cbreak(); // Disable keyboard input buffering, keys are immediately evaluated
@@ -81,17 +82,17 @@ static void set_color(const int color) {
   attrset(COLOR_PAIR(color));
 }
 
-void draw_point(const Screen *self, const Point pos, const int color) {
+void screen_draw_point(const Screen *self, const Point pos, const int color) {
   set_color(color);
   mvprintw(pos.y + self->offset.y, translate(pos.x) + self->offset.x, "██");
 }
 
-bool inside_boundaries(const Screen *self, const Snake *snake) {
+bool screen_inside_boundaries(const Screen *self, const Snake *snake) {
   return snake->head->pos.x <= self->map_width && snake->head->pos.x >= 0 &&
          snake->head->pos.y <= self->map_height && snake->head->pos.y >= 0;
 }
 
-void spawn_orb(Screen *self) {
+void screen_spawn_orb(Screen *self) {
   /* This is a critical point. With a big enough map and when the Snake is
    * short there is no problem. But when progressing towards the completion of
    * the game the app will probably stall, trying to randomly get a correct
@@ -104,15 +105,15 @@ void spawn_orb(Screen *self) {
     self->orb.y = rand() % (self->map_height + 1);
   } while (self->grid[self->orb.y][self->orb.x] == 1);
 
-  draw_point(self, self->orb, COLOR_MAGENTA);
+  screen_draw_point(self, self->orb, COLOR_MAGENTA);
 }
 
-void update_score(const Screen *self, const unsigned score) {
+void screen_update_score(const Screen *self, const unsigned score) {
   set_color(0);
   mvprintw(self->offset.y - 2, self->offset.x, "Score: %d", score);
 }
 
-void draw_walls(const Screen *self) {
+void screen_draw_walls(const Screen *self) {
   erase(); // Clean the terminal
   set_color(COLOR_YELLOW);
 
@@ -131,7 +132,7 @@ void draw_walls(const Screen *self) {
   }
 }
 
-void draw(const Screen *self, Snake *snake) {
+void screen_draw(const Screen *self, Snake *snake) {
   // Cover the old tail with a blank if the Snake has not grown
   if (!snake->growing) {
     mvprintw(snake->old_tail.y + self->offset.y,
@@ -140,18 +141,18 @@ void draw(const Screen *self, Snake *snake) {
   }
 
   // Draw the new head added by Snake::advance()
-  draw_point(self, snake->head->pos, 8);
+  screen_draw_point(self, snake->head->pos, 8);
   if (snake->head->prev != NULL)
-    draw_point(self, snake->head->prev->pos, COLOR_GREEN);
+    screen_draw_point(self, snake->head->prev->pos, COLOR_GREEN);
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1; // mark it occupied
 }
 
-bool prepare_game(Screen *self, Snake *snake) {
-  draw_walls(self);
-  spawn_orb(self);
-  update_score(self, snake->length);
-  draw_point(self, snake->head->pos, 8); // Draw the head of the snake
-  set_color(0);                          // Tip at the bottom
+bool screen_prepare_game(Screen *self, Snake *snake) {
+  screen_draw_walls(self);
+  screen_spawn_orb(self);
+  screen_update_score(self, snake->length);
+  screen_draw_point(self, snake->head->pos, 8); // Draw the head of the snake
+  set_color(0);                                // Tip at the bottom
   mvprintw(self->offset.y + self->map_height + 2, self->offset.x,
            "Move in any direction to start the game.");
 
@@ -194,7 +195,7 @@ get_user_input: // Get the initial direction of the snake
 static void update_doodle(Snake *doodle, const Point dialog_begin,
                           const int dialog_height, const int dialog_width) {
   doodle->old_tail = doodle->tail->pos;
-  ouroboros(doodle); // Tail becomes the head
+  snake_ouroboros(doodle); // Tail becomes the head
 
   // Head moves forward
   switch (doodle->direction) {
@@ -236,10 +237,10 @@ static void update_doodle(Snake *doodle, const Point dialog_begin,
     mvprintw(doodle->head->prev->pos.y, doodle->head->prev->pos.x, "██");
   }
   mvprintw(doodle->old_tail.y, doodle->old_tail.x, "  ");
-  nanosleep(&(const struct timespec){0, 33333333}, NULL);
+  nanosleep(&(struct timespec){0, 33333333}, NULL);
 }
 
-bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
+bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
             const unsigned score, const Point collision) {
   static const int dialog_height = 16, dialog_width = 57;
   const Point begin = {self->offset.x + self->map_width - dialog_width / 2 + 1,
@@ -308,12 +309,12 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
   switch (kind) {
   case WELCOME:
     fmt = welcome;
-    doodle = new_snake((Point){begin.x, begin.y + 2});
+    doodle = snake_create((Point){begin.x, begin.y + 2});
     doodle->direction = SOUTH;
     set_color(COLOR_GREEN);
     for (int i = 0; i < 7; ++i) { // Make it long 7
       doodle->head->next =
-          new_node((Point){begin.x, doodle->head->pos.y + 1}, doodle->head);
+          node_create((Point){begin.x, doodle->head->pos.y + 1}, doodle->head);
       doodle->head = doodle->head->next;
       mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
     }
@@ -321,7 +322,7 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
   case OVER:
     fmt = over;
     if (collision.x != -1 && collision.y != -1)
-      draw_point(self, collision, COLOR_RED);
+      screen_draw_point(self, collision, COLOR_RED);
     // Hide score count above the playing field
     mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
     nodelay(stdscr, false);
@@ -346,7 +347,7 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
     switch (getch()) {
     case '\n':
     case 'y': {
-      destroy_snake(doodle);
+      snake_destroy(doodle);
       return false;
     }
     case '>':
@@ -367,7 +368,7 @@ bool dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
       break;
     case 'n':
     case 'q':
-      destroy_snake(doodle);
+      snake_destroy(doodle);
       return true;
     }
 
