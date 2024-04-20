@@ -30,8 +30,8 @@ typedef struct node {
   Point pos;
 } Node;
 
-Node *new_node(const Point spawn_position, Node *prev);
-void destroy_node(Node *self);
+Node *node_create(const Point spawn_position, Node *prev);
+void node_destroy(Node *self);
 
 // The Snake is modelled by a doubly linked list
 typedef struct snake {
@@ -42,19 +42,19 @@ typedef struct snake {
   Direction direction;
 } Snake;
 
-Snake *new_snake(const Point head_position);
-void destroy_snake(Snake *self);
+Snake *snake_create(const Point head_position);
+void snake_destroy(Snake *self);
 
 // Pop the tail and push it as the new head
-void ouroboros(Snake *self);
+void snake_ouroboros(Snake *self);
 
 // Move the snake one cell forward in the current direction
-void advance(Snake *self);
+void snake_advance(Snake *self);
 
-void change_direction(Snake *self, Direction direction);
+void snake_change_direction(Snake *self, Direction direction);
 
 // Check if the Snake touches itself
 // If a self collision happens sets the parameter collision
-bool self_collision(const Snake *self, Point *collision);
+bool snake_self_collision(const Snake *self, Point *collision);
 
 #endif // !SNAKE_H
