@@ -12,6 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
+#define _POSIX_C_SOURCE 199309L
+
 #include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
@@ -35,8 +37,9 @@ Screen *screen_create(void) {
                          (self->height - self->map_height) / 2};
 
   self->grid = malloc(sizeof(int * [self->map_height + 1]));
-  for (int i = 0; i <= self->map_height; ++i)
+  for (int i = 0; i <= self->map_height; ++i) {
     self->grid[i] = calloc(self->map_width + 1, sizeof(int));
+  }
 
   return self;
 }
@@ -44,8 +47,9 @@ Screen *screen_create(void) {
 void screen_destroy(Screen *self) {
   if (self != NULL) {
     if (self->grid != NULL) {
-      for (int i = 0; i <= self->map_height; ++i)
+      for (size_t i = 0; i <= self->map_height; ++i) {
         free(self->grid[i]);
+      }
       free(self->grid);
     }
     free(self);
@@ -93,13 +97,13 @@ bool screen_inside_boundaries(const Screen *self, const Snake *snake) {
 }
 
 void screen_spawn_orb(Screen *self) {
-  /* This is a critical point. With a big enough map and when the Snake is
-   * short there is no problem. But when progressing towards the completion of
-   * the game the app will probably stall, trying to randomly get a correct
-   * position for the orb. One solution I thought is creating a dynamic
-   * structure that holds the set of current available Points to choose from to
-   * spawn a new orb. But this is a lot of code and could slow things down
-   * anyway. So I will leave the problem open for now. */
+  // This is a critical point. With a big enough map and when the Snake is
+  // short there is no problem. But when progressing towards the completion of
+  // the game the app will probably stall, trying to randomly get a correct
+  // position for the orb. One solution I thought is creating a dynamic
+  // structure that holds the set of current available Points to choose from to
+  // spawn a new orb. But this is a lot of code and could slow things down
+  // anyway. So I will leave the problem open for now.
   do {
     self->orb.x = rand() % (self->map_width + 1);
     self->orb.y = rand() % (self->map_height + 1);
@@ -142,8 +146,9 @@ void screen_draw(const Screen *self, Snake *snake) {
 
   // Draw the new head added by Snake::advance()
   screen_draw_point(self, snake->head->pos, 8);
-  if (snake->head->prev != NULL)
+  if (snake->head->prev != NULL) {
     screen_draw_point(self, snake->head->prev->pos, COLOR_GREEN);
+  }
   self->grid[snake->head->pos.y][snake->head->pos.x] = 1; // mark it occupied
 }
 
@@ -152,7 +157,7 @@ bool screen_prepare_game(Screen *self, Snake *snake) {
   screen_spawn_orb(self);
   screen_update_score(self, snake->length);
   screen_draw_point(self, snake->head->pos, 8); // Draw the head of the snake
-  set_color(0);                                // Tip at the bottom
+  set_color(0);                                 // Tip at the bottom
   mvprintw(self->offset.y + self->map_height + 2, self->offset.x,
            "Move in any direction to start the game.");
 
@@ -241,7 +246,7 @@ static void update_doodle(Snake *doodle, const Point dialog_begin,
 }
 
 bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
-            const unsigned score, const Point collision) {
+                   const unsigned score, const Point collision) {
   static const int dialog_height = 16, dialog_width = 57;
   const Point begin = {self->offset.x + self->map_width - dialog_width / 2 + 1,
                        self->offset.y + self->map_height / 2 -
@@ -321,8 +326,9 @@ bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
     break;
   case OVER:
     fmt = over;
-    if (collision.x != -1 && collision.y != -1)
+    if (collision.x != -1 && collision.y != -1) {
       screen_draw_point(self, collision, COLOR_RED);
+    }
     // Hide score count above the playing field
     mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
     nodelay(stdscr, false);
@@ -335,13 +341,15 @@ bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
 
   // Draw the dialog
   set_color(0);
-  for (int y = begin.y, i = 0; y < begin.y + dialog_height; ++y, ++i)
-    if (kind != WELCOME && i == 9) // Plug in the score
+  for (int y = begin.y, i = 0; y < begin.y + dialog_height; ++y, ++i) {
+    if (kind != WELCOME && i == 9) { // Plug in the score
       mvprintw(y, begin.x, fmt[i], score);
-    else if (i == 11) // Plug in the difficulty
+    } else if (i == 11) { // Plug in the difficulty
       mvprintw(y, difficulty_offset_x, fmt[i], diff[*difficulty]);
-    else
+    } else {
       mvprintw(y, begin.x, "%s", fmt[i]);
+    }
+  }
 
   while (true) { // Listen for keyboard input
     switch (getch()) {
@@ -372,7 +380,8 @@ bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
       return true;
     }
 
-    if (kind == WELCOME)
+    if (kind == WELCOME) {
       update_doodle(doodle, begin, dialog_height, dialog_width);
+    }
   }
 }
