@@ -42,8 +42,9 @@ Snake *snake_create(const Point head_position) {
 
 void snake_destroy(Snake *self) {
   if (self != NULL) {
-    for (Node *it = self->head; it != NULL; it = it->prev)
+    for (Node *it = self->head; it != NULL; it = it->prev) {
       node_destroy(it->next);
+    }
     node_destroy(self->tail);
     free(self);
     self = NULL;
@@ -51,13 +52,16 @@ void snake_destroy(Snake *self) {
 }
 
 bool snake_self_collision(const Snake *self, Point *collision) {
-  for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev)
-    for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev)
+  for (Node *it1 = self->head; it1 != NULL; it1 = it1->prev) {
+    for (Node *it2 = it1->prev; it2 != NULL; it2 = it2->prev) {
       if (it1->pos.x == it2->pos.x && it1->pos.y == it2->pos.y) {
-        if (collision != NULL)
+        if (collision != NULL) {
           *collision = it1->pos;
+        }
         return true;
       }
+    }
+  }
   return false;
 }
 
@@ -72,14 +76,16 @@ void snake_ouroboros(Snake *self) {
 }
 
 void snake_advance(Snake *self) {
-  if (!self->growing)
+  if (!self->growing) {
     self->old_tail = self->tail->pos;
+  }
 
   if (self->growing) {
     self->growing = false;
     self->head = self->head->next = node_create(self->head->pos, self->head);
-  } else if (self->length > 1)
+  } else if (self->length > 1) {
     snake_ouroboros(self);
+  }
 
   // Move it forward in the current direction
   switch (self->direction) {
@@ -99,9 +105,10 @@ void snake_advance(Snake *self) {
 }
 
 void snake_change_direction(Snake *self, Direction direction) {
-  /* Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
-   * and vice versa when the Snake is longer than 1. */
+  // Disallow moving from SOUTH to NORTH and vice versa and from EAST to WEST
+  // and vice versa when the Snake is longer than 1.
   if (direction != self->direction &&
-      !(self->length > 1 && direction == (self->direction + 2) % (WEST + 1)))
+      !(self->length > 1 && direction == (self->direction + 2) % (WEST + 1))) {
     self->direction = direction;
+  }
 }
