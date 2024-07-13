@@ -16,33 +16,25 @@
 #define SNAKE_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef enum { NORTH, EAST, SOUTH, WEST } Direction;
 
 // Coordinates from the top left corner of the Screen/playing field
-typedef struct point {
+typedef struct {
   int x, y;
-} Point;
-
-// The atomic piece that constitutes a Snake
-typedef struct node {
-  struct node *prev, *next;
-  Point pos;
-} Node;
-
-Node *node_create(const Point spawn_position, Node *prev);
-void node_destroy(Node *self);
+} Vec2;
 
 // The Snake is modelled by a doubly linked list
-typedef struct snake {
+typedef struct {
   unsigned length; // Also the score
-  Node *head, *tail;
-  Point old_tail; // Previous position of the tail
+  Vec2 old_tail;   // Previous position of the tail
   bool growing;
   Direction direction;
+  Vec2 *body;
 } Snake;
 
-Snake *snake_create(const Point head_position);
+Snake *snake_create(const Vec2 head_position, const size_t size);
 void snake_destroy(Snake *self);
 
 // Pop the tail and push it as the new head
@@ -55,6 +47,6 @@ void snake_change_direction(Snake *self, Direction direction);
 
 // Check if the Snake touches itself
 // If a self collision happens sets the parameter collision
-bool snake_self_collision(const Snake *self, Point *collision);
+bool snake_self_collision(const Snake *snake);
 
 #endif // !SNAKE_H
