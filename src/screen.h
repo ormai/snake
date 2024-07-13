@@ -21,12 +21,12 @@
 
 typedef enum { INCREMENTAL, EASY, MEDIUM, HARD } Difficulty;
 
-typedef struct screen {
+typedef struct {
   int width, height;         // Of the terminal window, in cells
   int map_width, map_height; // The map occupies a fraction of the screen
   unsigned playing_surface;  // One could call this the map
-  Point offset;              // An offset from the top-left for the map
-  Point orb;                 // The orb to capture
+  Vec2 offset;               // An offset from the top-left for the map
+  Vec2 orb;                  // The orb to capture
   int **grid;                // To keep track of the occupied cells
 } Screen;
 
@@ -52,7 +52,7 @@ void screen_draw(const Screen *self, Snake *snake);
 bool screen_prepare_game(Screen *self, Snake *snake);
 
 // Place a colored point ("██") on the map.
-void screen_draw_point(const Screen *self, const Point pos, const int color);
+void screen_draw_point(const Screen *self, const Vec2 pos, const int color);
 
 typedef enum { WELCOME, OVER, WIN } DialogKind;
 
@@ -61,6 +61,6 @@ typedef enum { WELCOME, OVER, WIN } DialogKind;
 // OVER.
 // Sets the difficulty as chosen by the player when kind is not WIN.
 bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
-                   const unsigned score, const Point collision);
+                   const unsigned score);
 
 #endif // !SCREEN_H

@@ -12,31 +12,27 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
-#define _POSIX_C_SOURCE 199309L
-
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <time.h>
+#include <threads.h>
 
 #include "screen.h"
 #include "snake.h"
 
-static void reset_game(Screen **screen, Snake **snake, Point *collision,
-                       float *progress) {
+static void reset_game(Screen **screen, Snake **snake, float *progress) {
   screen_destroy(*screen);
   *screen = screen_create();
   snake_destroy(*snake);
-  *snake = snake_create(
-      (Point){(*screen)->map_width / 2, (*screen)->map_height / 2});
-  *collision = (Point){-1, -1};
+  *snake =
+      snake_create((Vec2){(*screen)->map_width / 2, (*screen)->map_height / 2},
+                   (*screen)->map_width * (*screen)->map_height);
   *progress = 0.0;
 }
 
 int main(void) {
   const struct timespec delay[] = {
       {0, 83333333}, {0, 83333333}, {0, 50000000}, {0, 33333333}};
-  Point collision = {-1, -1};
   float progress = 0;
   Difficulty difficulty = INCREMENTAL;
   bool wall_collision = false;
@@ -45,9 +41,10 @@ int main(void) {
   // Instantiate the objects
   Screen *screen = screen_create();
   Snake *snake =
-      snake_create((Point){screen->map_width / 2, screen->map_height / 2});
+      snake_create((Vec2){screen->map_width / 2, screen->map_height / 2},
+                   screen->map_width * screen->map_height);
 
-  bool quit = screen_dialog(screen, WELCOME, &difficulty, 0, (Point){0, 0});
+  bool quit = screen_dialog(screen, WELCOME, &difficulty, 0);
   if (!quit) {
     quit = screen_prepare_game(screen, snake);
   }
@@ -79,10 +76,9 @@ int main(void) {
       quit = true;
     }
 
-    snake_advance(snake);
-
-    if (snake->head->pos.x == screen->orb.x && // Check for eaten orb
-        snake->head->pos.y == screen->orb.y) {
+    if (snake->body[snake->length - 1].x ==
+            screen->orb.x && // Check for eaten orb
+        snake->body[snake->length - 1].y == screen->orb.y) {
       snake->growing = true;
       ++snake->length;
       screen_spawn_orb(screen);
@@ -90,38 +86,42 @@ int main(void) {
       progress = (float)snake->length / screen->playing_surface;
 
       if (snake->length == screen->playing_surface) { // Check for win
-        if (!(quit = screen_dialog(screen, WIN, &difficulty, snake->length,
-                                   (Point){0, 0}))) {
-          if (!(quit = screen_dialog(screen, WELCOME, &difficulty, 0,
-                                     (Point){0, 0}))) {
-            reset_game(&screen, &snake, &collision, &progress);
+        if (!(quit = screen_dialog(screen, WIN, &difficulty, snake->length))) {
+          if (!(quit = screen_dialog(screen, WELCOME, &difficulty, 0))) {
+            reset_game(&screen, &snake, &progress);
           }
         }
         quit = screen_prepare_game(screen, snake);
       }
     }
 
+    snake_advance(snake);
+
     if ((wall_collision = !screen_inside_boundaries(screen, snake))) {
-      screen_draw_point(
-          screen, snake->length > 1 ? snake->head->prev->pos : snake->old_tail,
-          COLOR_RED);
+      screen_draw_point(screen,
+                        snake->length > 1 ? snake->body[snake->length - 2]
+                                          : snake->old_tail,
+                        COLOR_RED);
     } else {
       screen_draw(screen, snake);
     }
 
-    if ((wall_collision || snake_self_collision(snake, &collision)) &&
-        !(quit = screen_dialog(screen, OVER, &difficulty, snake->length,
-                               collision))) {
-      reset_game(&screen, &snake, &collision, &progress);
+    const bool self_collision = snake_self_collision(snake);
+    if (self_collision) {
+      screen_draw_point(screen, snake->body[snake->length - 1], COLOR_RED);
+    }
+    if ((wall_collision || self_collision) &&
+        !(quit = screen_dialog(screen, OVER, &difficulty, snake->length))) {
+      reset_game(&screen, &snake, &progress);
       quit = screen_prepare_game(screen, snake);
     }
 
     if (difficulty == INCREMENTAL) {
       const struct timespec sleep = {0, delay[EASY].tv_nsec -
                                             delay[MEDIUM].tv_nsec * progress};
-      nanosleep(&sleep, NULL);
+      thrd_sleep(&sleep, NULL);
     } else {
-      nanosleep(delay + difficulty, NULL); // &delay[difficulty]
+      thrd_sleep(&delay[difficulty], NULL); // &delay[difficulty]
     }
   }
 
