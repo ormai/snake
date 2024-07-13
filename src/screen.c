@@ -12,17 +12,67 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details. */
 
-#define _POSIX_C_SOURCE 199309L
-
 #include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <time.h>
-#include <wchar.h>
+
+#include <threads.h>
 
 #include "screen.h"
 #include "snake.h"
+
+static const char *
+    diff[] = {"  incremental >", "   < easy >    ", "  < medium >   ",
+              "   < hard      "},
+   *welcome[] = {"",
+                 "                              _",
+                 "                             | |",
+                 "              ___ _ __   __ _| | _____   ___",
+                 "             / __| '_ \\ / _` | |/ / _ \\ / __|",
+                 "             \\__ \\ | | | (_| |   <  __/| (__",
+                 "             |___/_| |_|\\__,_|_|\\_\\___(_)___|",
+                 "",
+                 "",
+                 "          by Mario D'Andrea <https://ormai.dev>",
+                 "",
+                 "              Difficulty %s",
+                 "",
+                 "                  Quit [q]      Play [⏎]",
+                 "",
+                 ""},
+   *over[] = {"┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+              "┃   _____                        _____                  ┃",
+              "┃  |  __ \\                      |  _  |                 ┃",
+              "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
+              "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
+              "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
+              "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
+              "┃                                                       ┃",
+              "┃                                                       ┃",
+              "┃                   Your score was %-4d                 ┃",
+              "┃                                                       ┃",
+              "┃               Difficulty %s              ┃",
+              "┃                                                       ┃",
+              "┃              Quit [q]      Play again [⏎]             ┃",
+              "┃                                                       ┃",
+              "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"},
+   *win[] = {"┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+             "┃         __   __            _    _                     ┃",
+             "┃         \\ \\ / /           | |  | |                    ┃",
+             "┃          \\ V /___  _   _  | |  | | ___  _ __          ┃",
+             "┃           \\ // _ \\| | | | | |/\\| |/ _ \\| '_ \\         ┃",
+             "┃           | | (_) | |_| | \\  /\\  / (_) | | | |        ┃",
+             "┃           \\_/\\___/ \\__,_|  \\/  \\/ \\___/|_| |_|        ┃",
+             "┃                                                       ┃",
+             "┃                                                       ┃",
+             "┃                   Your score was %-4d                 ┃",
+             "┃                                                       ┃",
+             "┃               Difficulty: %s             ┃",
+             "┃                                                       ┃",
+             "┃             Quit [q]      Return home [⏎]             ┃",
+             "┃                                                       ┃",
+             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
 
 Screen *screen_create(void) {
   Screen *self = malloc(sizeof(Screen));
@@ -33,8 +83,8 @@ Screen *screen_create(void) {
   self->map_height = self->height * 2 / 3;
   self->playing_surface = self->map_width * self->map_height;
 
-  self->offset = (Point){(self->width - self->map_width * 2) / 2,
-                         (self->height - self->map_height) / 2};
+  self->offset = (Vec2){(self->width - self->map_width * 2) / 2,
+                        (self->height - self->map_height) / 2};
 
   self->grid = malloc(sizeof(int * [self->map_height + 1]));
   for (int i = 0; i <= self->map_height; ++i) {
@@ -86,14 +136,15 @@ static void set_color(const int color) {
   attrset(COLOR_PAIR(color));
 }
 
-void screen_draw_point(const Screen *self, const Point pos, const int color) {
+void screen_draw_point(const Screen *self, const Vec2 pos, const int color) {
   set_color(color);
   mvprintw(pos.y + self->offset.y, translate(pos.x) + self->offset.x, "██");
 }
 
 bool screen_inside_boundaries(const Screen *self, const Snake *snake) {
-  return snake->head->pos.x <= self->map_width && snake->head->pos.x >= 0 &&
-         snake->head->pos.y <= self->map_height && snake->head->pos.y >= 0;
+  const Vec2 head = snake->body[snake->length - 1];
+  return head.x <= self->map_width && head.x >= 0 &&
+         head.y <= self->map_height && head.y >= 0;
 }
 
 void screen_spawn_orb(Screen *self) {
@@ -101,7 +152,7 @@ void screen_spawn_orb(Screen *self) {
   // short there is no problem. But when progressing towards the completion of
   // the game the app will probably stall, trying to randomly get a correct
   // position for the orb. One solution I thought is creating a dynamic
-  // structure that holds the set of current available Points to choose from to
+  // structure that holds the set of current available Vec2s to choose from to
   // spawn a new orb. But this is a lot of code and could slow things down
   // anyway. So I will leave the problem open for now.
   do {
@@ -121,9 +172,9 @@ void screen_draw_walls(const Screen *self) {
   erase(); // Clean the terminal
   set_color(COLOR_YELLOW);
 
-  const Point northWest = {self->offset.x, self->offset.y - 1},
-              southEasth = {translate(self->map_width) + self->offset.x + 2,
-                            self->map_height + self->offset.y + 1};
+  const Vec2 northWest = {self->offset.x, self->offset.y - 1},
+             southEasth = {translate(self->map_width) + self->offset.x + 2,
+                           self->map_height + self->offset.y + 1};
 
   // Not able to use mvhline() and mvvline() because of the wide characters
   for (int i = northWest.x; i <= southEasth.x; ++i) {
@@ -145,19 +196,21 @@ void screen_draw(const Screen *self, Snake *snake) {
   }
 
   // Draw the new head added by Snake::advance()
-  screen_draw_point(self, snake->head->pos, 8);
-  if (snake->head->prev != NULL) {
-    screen_draw_point(self, snake->head->prev->pos, COLOR_GREEN);
+  screen_draw_point(self, snake->body[snake->length - 1], 8);
+  if (snake->length > 1) {
+    screen_draw_point(self, snake->body[snake->length - 2], COLOR_GREEN);
   }
-  self->grid[snake->head->pos.y][snake->head->pos.x] = 1; // mark it occupied
+  // self->grid[snake->body[snake->length - 1].y]
+  //           [snake->body[snake->length - 1].x] = 1; // mark it occupied
 }
 
 bool screen_prepare_game(Screen *self, Snake *snake) {
   screen_draw_walls(self);
   screen_spawn_orb(self);
   screen_update_score(self, snake->length);
-  screen_draw_point(self, snake->head->pos, 8); // Draw the head of the snake
-  set_color(0);                                 // Tip at the bottom
+  screen_draw_point(self, snake->body[snake->length - 1],
+                    8); // Draw the head of the snake
+  set_color(0);         // Tip at the bottom
   mvprintw(self->offset.y + self->map_height + 2, self->offset.x,
            "Move in any direction to start the game.");
 
@@ -197,116 +250,67 @@ get_user_input: // Get the initial direction of the snake
   return false;
 }
 
-static void update_doodle(Snake *doodle, const Point dialog_begin,
+static void update_doodle(Snake *doodle, const Vec2 dialog_begin,
                           const int dialog_height, const int dialog_width) {
-  doodle->old_tail = doodle->tail->pos;
+  doodle->old_tail = doodle->body[0];
   snake_ouroboros(doodle); // Tail becomes the head
 
   // Head moves forward
   switch (doodle->direction) {
   case NORTH:
-    if (doodle->head->pos.y >= dialog_begin.y) {
-      --doodle->head->pos.y;
+    if (doodle->body[doodle->length - 1].y >= dialog_begin.y) {
+      --doodle->body[doodle->length - 1].y;
       break;
     }
     doodle->direction = WEST;
     /* fallthrough */
   case WEST:
-    if (doodle->head->pos.x > dialog_begin.x) {
-      doodle->head->pos.x -= 2;
+    if (doodle->body[doodle->length - 1].x > dialog_begin.x) {
+      doodle->body[doodle->length - 1].x -= 2;
       break;
     }
     doodle->direction = SOUTH;
     /* fallthrough */
   case SOUTH:
-    if (doodle->head->pos.y - 1 < dialog_begin.y + dialog_height) {
-      ++doodle->head->pos.y;
+    if (doodle->body[doodle->length - 1].y - 1 <
+        dialog_begin.y + dialog_height) {
+      ++doodle->body[doodle->length - 1].y;
       break;
     }
     doodle->direction = EAST;
     /* fallthrough */
   case EAST:
-    if (doodle->head->pos.x < dialog_begin.x + dialog_width - 1) {
-      doodle->head->pos.x += 2;
+    if (doodle->body[doodle->length - 1].x <
+        dialog_begin.x + dialog_width - 1) {
+      doodle->body[doodle->length - 1].x += 2;
       break;
     }
     doodle->direction = NORTH;
-    --doodle->head->pos.y;
+    --doodle->body[doodle->length - 1].y;
   }
 
-  // Draw the head, hide the old tail, and sleep
   set_color(8);
-  mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
-  if (doodle->head->prev != NULL) {
+  mvprintw(doodle->body[doodle->length - 1].y,
+           doodle->body[doodle->length - 1].x, "██");
+  if (doodle->length >= 2) {
     set_color(COLOR_GREEN);
-    mvprintw(doodle->head->prev->pos.y, doodle->head->prev->pos.x, "██");
+    mvprintw(doodle->body[doodle->length - 2].y,
+             doodle->body[doodle->length - 2].x, "██");
   }
   mvprintw(doodle->old_tail.y, doodle->old_tail.x, "  ");
-  nanosleep(&(struct timespec){0, 33333333}, NULL);
+
+  thrd_sleep(&(struct timespec){0, 33333333}, NULL);
 }
 
 bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
-                   const unsigned score, const Point collision) {
+                   const unsigned score) {
   static const int dialog_height = 16, dialog_width = 57;
-  const Point begin = {self->offset.x + self->map_width - dialog_width / 2 + 1,
-                       self->offset.y + self->map_height / 2 -
-                           dialog_height / 2 + 1};
-  static char
-      *diff[] = {"  incremental >", "   < easy >    ", "  < medium >   ",
-                 "   < hard      "},
-      *welcome[] = {"",
-                    "                              _",
-                    "                             | |",
-                    "              ___ _ __   __ _| | _____   ___",
-                    "             / __| '_ \\ / _` | |/ / _ \\ / __|",
-                    "             \\__ \\ | | | (_| |   <  __/| (__",
-                    "             |___/_| |_|\\__,_|_|\\_\\___(_)___|",
-                    "",
-                    "",
-                    "          by Mario D'Andrea <https://ormai.dev>",
-                    "",
-                    "              Difficulty %s",
-                    "",
-                    "                  Quit [q]      Play [⏎]",
-                    "",
-                    ""},
-      *over[] =
-          {"┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-           "┃   _____                        _____                  ┃",
-           "┃  |  __ \\                      |  _  |                 ┃",
-           "┃  | |  \\/ __ _ _ __ ___   ___  | | | |_   _____ _ __   ┃",
-           "┃  | | __ / _` | '_ ` _ \\ / _ \\ | | | \\ \\ / / _ \\ '__|  ┃",
-           "┃  | |_\\ \\ (_| | | | | | |  __/ \\ \\_/ /\\ V /  __/ |     ┃",
-           "┃   \\____/\\__,_|_| |_| |_|\\___|  \\___/  \\_/ \\___|_|     ┃",
-           "┃                                                       ┃",
-           "┃                                                       ┃",
-           "┃                   Your score was %-4d                 ┃",
-           "┃                                                       ┃",
-           "┃               Difficulty %s              ┃",
-           "┃                                                       ┃",
-           "┃              Quit [q]      Play again [⏎]             ┃",
-           "┃                                                       ┃",
-           "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"},
-      *win[] = {
-          "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-          "┃         __   __            _    _                     ┃",
-          "┃         \\ \\ / /           | |  | |                    ┃",
-          "┃          \\ V /___  _   _  | |  | | ___  _ __          ┃",
-          "┃           \\ // _ \\| | | | | |/\\| |/ _ \\| '_ \\         ┃",
-          "┃           | | (_) | |_| | \\  /\\  / (_) | | | |        ┃",
-          "┃           \\_/\\___/ \\__,_|  \\/  \\/ \\___/|_| |_|        ┃",
-          "┃                                                       ┃",
-          "┃                                                       ┃",
-          "┃                   Your score was %-4d                 ┃",
-          "┃                                                       ┃",
-          "┃               Difficulty: %s             ┃",
-          "┃                                                       ┃",
-          "┃             Quit [q]      Return home [⏎]             ┃",
-          "┃                                                       ┃",
-          "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"};
+  const Vec2 begin = {self->offset.x + self->map_width - dialog_width / 2 + 1,
+                      self->offset.y + self->map_height / 2 -
+                          dialog_height / 2 + 1};
 
-  Snake *doodle = NULL; // Snake decoration on welcome screen
-  char **fmt = NULL;    // Select the appropriate format string
+  Snake *doodle = NULL;    // Snake decoration on welcome screen
+  const char **fmt = NULL; // Select the appropriate format string
 
   // Add right offset so that changing difficulty doesn't interfere with doodle
   const int difficulty_offset_x = begin.x + (kind == WELCOME ? 3 : 0);
@@ -314,21 +318,19 @@ bool screen_dialog(Screen *self, DialogKind kind, Difficulty *difficulty,
   switch (kind) {
   case WELCOME:
     fmt = welcome;
-    doodle = snake_create((Point){begin.x, begin.y + 2});
+    doodle = snake_create((Vec2){begin.x, begin.y + 2}, 7);
     doodle->direction = SOUTH;
     set_color(COLOR_GREEN);
     for (int i = 0; i < 7; ++i) { // Make it long 7
-      doodle->head->next =
-          node_create((Point){begin.x, doodle->head->pos.y + 1}, doodle->head);
-      doodle->head = doodle->head->next;
-      mvprintw(doodle->head->pos.y, doodle->head->pos.x, "██");
+      doodle->body[doodle->length] =
+          (Vec2){begin.x, doodle->body[doodle->length - 1].y + 1};
+      ++doodle->length;
+      mvprintw(doodle->body[doodle->length - 1].y,
+               doodle->body[doodle->length - 1].x, "██");
     }
     break;
   case OVER:
     fmt = over;
-    if (collision.x != -1 && collision.y != -1) {
-      screen_draw_point(self, collision, COLOR_RED);
-    }
     // Hide score count above the playing field
     mvhline(self->offset.y - 2, self->offset.x - 1, ' ', self->width);
     nodelay(stdscr, false);
