@@ -1,22 +1,22 @@
 .POSIX:
+.PHONY: all clean test
 
-LDLIBS=-lncursesw
-CC=gcc
-SANITIZE=-fsanitize=address,alignment,bool,bounds,builtin,enum,vptr,return,null,undefined,unreachable
-WARNINGS=-Wall -Wextra -Wpedantic
-CFLAGS=-std=c2x $(SANITIZE) $(WARNINGS)
+snake: main.c snake.o screen.o term.o
+	$(CC) $(CFLAGS) -o $@ $^
 
-OBJ=screen.o snake.o
+.c.o:
+	$(CC) $(CFLAGS) -c $<
 
-snake: src/main.c screen.o snake.o
-	$(CC) $(CFLAGS) -o $@ $< $(OBJ) $(LDLIBS)
+SANITIZE = -fsanitize=address,leak,undefined
+HARDEN = -fharden-compares -fharden-conditional-branches \
+	-fharden-control-flow-redundancy -fhardened
+WARNINGS = -Wall -Wextra -Wpedantic \
+	-Wformat=2 -Wno-unused-parameter -Wshadow \
+	-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
+	-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 
-screen.o: src/screen.c src/screen.h
-	$(CC) -c $<
-snake.o: src/snake.c src/snake.h
-	$(CC) -c $<
-
-run: snake
+test:
+	$(CC) -Og -ggdb $(SANITIZE) $(HARDEN) $(WARNINGS) -o snake *.c
 	./snake
 
 clean:

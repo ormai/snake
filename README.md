@@ -1,17 +1,16 @@
-The game of [snake](https://en.wikipedia.org/wiki/Snake_(video_game)) implemented in C using [ncurses](https://en.wikipedia.org/wiki/Ncurses).
+The [snake](https://en.wikipedia.org/wiki/Snake_(video_game)) game written in C for the terminal.
 
-![Video demonstration](demo.gif)
+![demo](demo.gif)
 
 The game is little (around 500 lines of code) and the code is commented.
 
-To build on Debian you need `git`, `meson`, `gcc`, `ncurses-dev`. Then run
+Build instructions:
 
 ```sh
 git clone https://github.com/ormai/snake.git
 cd snake/
-meson setup build
-meson compile -C build
-build/snake
+make
+./snake
 ```
 
 You can move with <kbd>w</kbd> <kbd>a</kbd> <kbd>s</kbd> <kbd>d</kbd> or with <kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd>, or just with the arrow keys. Press <kbd>q</kbd> to quit.
