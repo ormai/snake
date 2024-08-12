@@ -9,7 +9,7 @@
 
 enum direction { UP, RIGHT, DOWN, LEFT };
 
-// Coordinates from the top left corner of the Screen/playing field
+// Coordinates from the top left corner of the map
 struct point {
   int x, y;
 };
@@ -19,6 +19,7 @@ struct snake {
   struct point old_tail; // Previous position of the tail
   bool growing;
   enum direction direction;
+  struct point head; // would be body[length - 1], for easy access
   struct point *body;
 };
 
