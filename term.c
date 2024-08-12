@@ -64,8 +64,17 @@ void set_color(const enum color color) { printf(CSI "%dm", color); }
 
 void erase(void) { printf(CSI "2J"); }
 
+static inline void move(const int y, const int x) {
+  printf(CSI "%d;%dH", y + 1, x + 1);
+}
+
+void erase_line(const int y) {
+  move(y, 0);
+  printf(CSI "2K");
+}
+
 void print(const int y, const int x, const char *fmt, ...) {
-  printf(CSI "%d;%dH", y + 1, x + 1); // move cursor to line y+1 and column x+1
+  move(y, x);
 
   char buf[2048];
   va_list ap;

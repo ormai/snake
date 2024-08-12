@@ -10,8 +10,10 @@ struct snake *snake_create(const struct point head, const size_t size) {
   struct snake *snake = calloc(1, sizeof(struct snake));
   snake->body = malloc(sizeof(struct point[size + 1]));
   snake->body[0] = head;
+  snake->head = head;
   snake->length = 1;
   snake->growing = false;
+  snake->direction = DOWN;
   return snake;
 }
 
@@ -24,9 +26,9 @@ void snake_destroy(struct snake *snake) {
 }
 
 bool self_collision(const struct snake *snake) {
-  const struct point head = snake->body[snake->length - 1];
   for (size_t i = 0; i < snake->length - 1; ++i) {
-    if (snake->body[i].x == head.x && snake->body[i].y == head.y) {
+    if (snake->body[i].x == snake->head.x &&
+        snake->body[i].y == snake->head.y) {
       return true;
     }
   }
@@ -39,8 +41,7 @@ void advance(struct snake *snake) {
   }
 
   if (snake->growing) {
-    snake->growing = false;
-    snake->body[snake->length - 1] = snake->body[snake->length - 2];
+    snake->body[snake->length - 1] = snake->head;
   } else if (snake->length > 1) {
     for (size_t i = 0; i < snake->length - 1; ++i) {
       snake->body[i] = snake->body[i + 1];
@@ -50,18 +51,19 @@ void advance(struct snake *snake) {
   // Move it forward in the current direction
   switch (snake->direction) {
   case UP:
-    --snake->body[snake->length - 1].y;
+    --snake->head.y;
     break;
   case RIGHT:
-    ++snake->body[snake->length - 1].x;
+    ++snake->head.x;
     break;
   case DOWN:
-    ++snake->body[snake->length - 1].y;
+    ++snake->head.y;
     break;
   case LEFT:
-    --snake->body[snake->length - 1].x;
+    --snake->head.x;
     break;
   }
+  snake->body[snake->length - 1] = snake->head;
 }
 
 void change_direction(struct snake *self, enum direction direction) {
