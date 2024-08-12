@@ -61,6 +61,9 @@ void set_color(const enum color color);
 // Erase the terminal
 void erase(void);
 
+// Erase the yth line in the terminal
+void erase_line(const int y);
+
 // Print a formatted string at line y and column x.
 // For multi byte characters to work an appropriate locale must be set.
 void print(int y, int x, const char *fmt, ...);
