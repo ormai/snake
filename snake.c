@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "snake.h"
 
@@ -36,19 +37,16 @@ bool self_collision(const struct snake *snake) {
 }
 
 void advance(struct snake *snake) {
-  if (!snake->growing) {
-    snake->old_tail = snake->body[0];
-  }
+  snake->old_tail = snake->body[0];
 
   if (snake->growing) {
+    snake->growing = false;
     snake->body[snake->length - 1] = snake->head;
   } else if (snake->length > 1) {
-    for (size_t i = 0; i < snake->length - 1; ++i) {
-      snake->body[i] = snake->body[i + 1];
-    }
+    memmove(snake->body, snake->body + 1,
+            sizeof(struct point[snake->length - 1]));
   }
 
-  // Move it forward in the current direction
   switch (snake->direction) {
   case UP:
     --snake->head.y;

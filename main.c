@@ -10,8 +10,6 @@
 #include <threads.h>
 #include <time.h>
 
-#include <assert.h>
-
 #include "map.h"
 #include "snake.h"
 #include "term.h"
@@ -36,6 +34,7 @@ static void new_game(struct game_state *game, struct map **m,
   const struct point map_center = {map->width / 2, map->height / 2};
   *s = snake = snake_create(map_center, map->area);
 
+  erase();
   draw_walls(map);
   spawn_apple(map);
   update_score(map, snake->length);
@@ -128,7 +127,8 @@ int main(void) {
     }
 
     if (game.difficulty == INCREMENTAL) {
-      const struct timespec sleep = {0, delay[EASY].tv_nsec - delay[MEDIUM].tv_nsec * game.progress};
+      const struct timespec sleep = {
+          0, delay[EASY].tv_nsec - delay[HARD].tv_nsec * game.progress};
       nanosleep(&sleep, NULL);
     } else {
       nanosleep(&delay[game.difficulty], NULL);
