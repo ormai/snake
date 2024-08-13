@@ -1,11 +1,5 @@
 .POSIX:
-.PHONY: all clean test
-
-snake: main.c snake.o window.o map.o term.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-.c.o:
-	$(CC) $(CFLAGS) -c $<
+.PHONY: all clean
 
 SANITIZE = -fsanitize=address,leak,undefined
 WARNINGS = -Wall -Wextra -Wpedantic \
@@ -13,9 +7,18 @@ WARNINGS = -Wall -Wextra -Wpedantic \
 	-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 	-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 
-test:
-	$(CC) -Og -ggdb $(SANITIZE) $(WARNINGS) -o snake *.c
-	./snake
+CFLAGS = -O0 -g $(SANITIZE) $(WARNINGS)
+CFLAGS$(DEBUG) = -O3 -DNDEBUG
+
+all: snake
+
+snake: main.c snake.o window.o map.o term.o
+	$(CC) $(CFLAGS) -o $@ $^
+snake.o: snake.c snake.h
+window.o: window.c snake.h term.h window.h
+map.o: map.c map.h snake.h term.h window.h
+term.o: term.c term.h
+
 
 clean:
 	rm -f snake *.o
