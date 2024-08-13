@@ -21,16 +21,14 @@ void draw_walls(const struct map *map);
 // Draw the snake on to the screen
 void redraw_snake(const struct map *map, struct snake *snake);
 
-// Returns true if the player wants to quit.
-// score is irrelevant when kind is WELCOME, collision is relevant when kind is
-// OVER.
-// Sets the difficulty as chosen
-
+// Returns te value for game.quit
 bool welcome_dialog(enum difficulty *difficulty);
 
+// Returns te value for game.quit
 bool over_dialog(const struct map *map, enum difficulty *difficulty,
                  const size_t score);
 
+// Returns te value for game.quit
 bool win_dialog(const struct map *map, enum difficulty *difficulty,
                 const size_t score);
 

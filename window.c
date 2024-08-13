@@ -3,8 +3,10 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <time.h>
 
 #include "snake.h"
@@ -25,7 +27,6 @@ void update_score(const struct map *map, const size_t score) {
 }
 
 void draw_walls(const struct map *map) {
-  erase();
   set_color(YELLOW);
   struct point up_left = {map->offset.x, map->offset.y - 1},
                down_right = {translate(map->width) + map->offset.x + 2,
@@ -41,14 +42,7 @@ void draw_walls(const struct map *map) {
 }
 
 void redraw_snake(const struct map *map, struct snake *snake) {
-  // Cover the old tail with a blank if the snake has not grown;
-  if (snake->growing) {
-    snake->growing = false;
-    // map->grid[snake->old_tail.y][snake->old_tail.x] = 0; // mark it free
-  } else {
-    print(snake->old_tail.y + map->offset.y,
-          translate(snake->old_tail.x) + map->offset.x, "  ");
-  }
+  map->grid[snake->old_tail.y][snake->old_tail.x] = false;
 
   if (snake->length > 1) {
     set_color(GREEN);
@@ -56,8 +50,10 @@ void redraw_snake(const struct map *map, struct snake *snake) {
   }
   set_color(BRIGHT_GREEN);
   draw_point(map, snake->head);
-  // map->grid[snake->body[snake->length - 1].y]
-  //           [snake->body[snake->length - 1].x] = 1; // mark it occupied
+  map->grid[snake->head.y][snake->head.x] = true;
+
+  print(snake->old_tail.y + map->offset.y,
+        translate(snake->old_tail.x) + map->offset.x, "  ");
 }
 
 static inline void update_doodle(struct snake *doodle,
@@ -65,9 +61,8 @@ static inline void update_doodle(struct snake *doodle,
                                  const int dialog_height,
                                  const int dialog_width) {
   doodle->old_tail = doodle->body[0];
-  for (size_t i = 0; i < doodle->length - 1; ++i) {
-    doodle->body[i] = doodle->body[i + 1];
-  }
+  memmove(doodle->body, doodle->body + 1,
+          sizeof(struct point[doodle->length - 1]));
 
   // Head moves forward. The doodle moves in a loop.
   switch (doodle->direction) {
