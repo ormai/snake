@@ -49,12 +49,12 @@ void spawn_apple(struct map *map) {
   do {
     if (++tries > max_tries) {
       // Aftern max_tries tries just use the first avaliable point.
-      for (int i = 0; i < map->height; ++i) {
-        for (int j = 0; j < map->width; ++j) {
+      bool found_it = false;
+      for (int i = 0; i < map->height && !found_it; ++i) {
+        for (int j = 0; j < map->width && !found_it; ++j) {
           if (map->grid[i][j] == false) {
-            map->grid[i][j] = true;
+            found_it = map->grid[i][j] = true;
             map->apple = (struct point){i, j};
-            return;
           }
         }
       }
