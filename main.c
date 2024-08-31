@@ -99,7 +99,7 @@ int main(void) {
       ++snake->length;
       spawn_apple(map);
       update_score(map, snake->length);
-      game.progress = (float)snake->length / map->area;
+      game.progress = (snake->length + .0) / map->area;
       if (snake->length == map->area) {
         if (!(game.quit = win_dialog(map, &game.difficulty, snake->length))) {
           new_game(&game, &map, &snake);
