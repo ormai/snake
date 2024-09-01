@@ -14,6 +14,9 @@
 #include <stdbool.h>
 #include <sys/ioctl.h>
 
+#define ESC '\033'
+#define CSI "\033[" // Control Sequence Introducer
+
 enum color {
   BLACK = 30,
   RED,

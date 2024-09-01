@@ -11,8 +11,6 @@
 
 #include "term.h"
 
-#define CSI "\033[" // Control Sequence Introducer: ESC[
-
 static struct termios saved_attr;
 
 void term_init(void) {
@@ -38,9 +36,9 @@ void term_finalize(void) {
 
 int getch(void) {
   const int c = getchar();
-  if (c == '\033') {
+  if (c == ESC) {
     getchar(); // skip [
-    return '\033' + '[' + getchar();
+    return ESC + '[' + getchar();
   }
   return c;
 }
