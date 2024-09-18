@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.dev
 
 #include <stdbool.h>
 #include <stdlib.h>
