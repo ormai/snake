@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.dev
 
 #ifndef SNAKE_H
 #define SNAKE_H
@@ -26,12 +26,12 @@ struct snake {
 struct snake *snake_create(const struct point head, const size_t size);
 void snake_destroy(struct snake *self);
 
-// Move the snake one cell forward in the current direction.
+// Move the snake one cell forward in the current direction
 void advance(struct snake *self);
 
 void change_direction(struct snake *self, const enum direction direction);
 
-// Check if the head of the snake overlaps with every other point of the body.
+// Check whether the snake's head overlaps with any other point of its body
 bool self_collision(const struct snake *snake);
 
-#endif // !SNAKE_H
+#endif // SNAKE_H

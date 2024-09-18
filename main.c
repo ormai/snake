@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.dev
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -110,7 +110,7 @@ int main(void) {
     advance(snake);
 
     // Game over after collision
-    if ((game.wall_collision = !inside_walls(map, snake))) {
+    if ((game.wall_collision = !is_inside(map, snake))) {
       set_color(RED);
       draw_point(map, snake->length > 1 ? snake->body[snake->length - 2]
                                         : snake->old_tail);

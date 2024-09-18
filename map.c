@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright © 2024  Mario D'Andrea https://ormai.dev
+
 #include <stdlib.h>
 #include <sys/ioctl.h>
 
@@ -37,7 +40,7 @@ void map_destroy(struct map *map) {
   }
 }
 
-bool inside_walls(const struct map *map, const struct snake *snake) {
+bool is_inside(const struct map *map, const struct snake *snake) {
   const struct point head = snake->body[snake->length - 1];
   return head.x <= map->width && head.x >= 0 && head.y <= map->height &&
          head.y >= 0;
@@ -45,10 +48,10 @@ bool inside_walls(const struct map *map, const struct snake *snake) {
 
 void spawn_apple(struct map *map) {
   static const unsigned max_tries = 5;
-  unsigned tries = 1;
+  unsigned tries = 0;
   do {
-    if (++tries > max_tries) {
-      // Aftern max_tries tries just use the first avaliable point.
+    if (tries++ > max_tries) {
+      // After max_tries use the first available point
       bool found_it = false;
       for (int i = 0; i < map->height && !found_it; ++i) {
         for (int j = 0; j < map->width && !found_it; ++j) {
