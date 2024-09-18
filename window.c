@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.dev
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -17,8 +17,9 @@
 // point: "██". Eg. x = 4 maps to the 9th actual terminal column.
 static int translate(const int x) { return x + x + 1; }
 
-void draw_point(const struct map *map, const struct point pos) {
-  print(pos.y + map->offset.y, translate(pos.x) + map->offset.x, "██");
+void draw_point(const struct map *map, const struct point position) {
+  print(position.y + map->offset.y, translate(position.x) + map->offset.x,
+        "██");
 }
 
 void update_score(const struct map *map, const size_t score) {

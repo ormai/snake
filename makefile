@@ -1,13 +1,13 @@
 .POSIX:
 .PHONY: all clean
 
-SANITIZE = -fsanitize=address,leak,undefined
+SANITIZERS = -fsanitize=address,leak,undefined
 WARNINGS = -Wall -Wextra -Wpedantic \
 	-Wformat=2 -Wno-unused-parameter -Wshadow \
 	-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 	-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 
-CFLAGS = -O0 -g $(SANITIZE) $(WARNINGS)
+CFLAGS = -O0 -g $(SANITIZERS) $(WARNINGS)
 CFLAGS$(DEBUG) = -O3 -DNDEBUG
 
 all: snake

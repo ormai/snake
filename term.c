@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.dev
 
 #include <fcntl.h>
 #include <stdarg.h>
@@ -14,7 +14,7 @@
 static struct termios saved_attr;
 
 void term_init(void) {
-  // Switch to alternative screen, so that the previous terminal is preserved.
+  // Switch to alternative screen, so that the previous terminal can be restored
   printf(CSI "?1049h");
 
   tcgetattr(STDIN_FILENO, &saved_attr);
