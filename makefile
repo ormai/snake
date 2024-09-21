@@ -7,6 +7,8 @@ WARNINGS = -Wall -Wextra -Wpedantic \
 	-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 	-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 
+
+# `make DEBUG=whatever` to enable a sort of dev profile
 CFLAGS = -O0 -g $(SANITIZERS) $(WARNINGS)
 CFLAGS$(DEBUG) = -O3 -DNDEBUG
 

@@ -1,4 +1,4 @@
-The [snake](https://en.wikipedia.org/wiki/Snake_(video_game)) game written in C for the terminal.
+The [snake](https://en.wikipedia.org/wiki/Snake_(1998_video_game)) game written in C for the terminal.
 
 ![demo](demo.gif)
 

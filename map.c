@@ -56,7 +56,8 @@ void spawn_apple(struct map *map) {
       for (int i = 0; i < map->height && !found_it; ++i) {
         for (int j = 0; j < map->width && !found_it; ++j) {
           if (map->grid[i][j] == false) {
-            found_it = map->grid[i][j] = true;
+            found_it = true;
+            map->grid[i][j] = true;
             map->apple = (struct point){i, j};
           }
         }
