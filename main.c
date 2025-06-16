@@ -5,8 +5,6 @@
 
 #include <locale.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <threads.h>
 #include <time.h>
 
@@ -14,6 +12,8 @@
 #include "snake.h"
 #include "term.h"
 #include "window.h"
+
+#define SECOND 1000000000LL // a second in nanoseconds
 
 struct game_state {
   float progress;
@@ -48,12 +48,16 @@ static void new_game(struct game_state *game, struct map **m,
   game->progress = 0;
 }
 
+/// Return the current time in nanoseconds.
+static long long time_ns(void) {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * SECOND + ts.tv_nsec;
+}
+
 int main(void) {
   setlocale(LC_ALL, "");
   term_init();
-
-  static const struct timespec delay[] = {
-      {0, 83333333}, {0, 83333333}, {0, 50000000}, {0, 33333333}};
 
   struct map *map = NULL;
   struct snake *snake = NULL;
@@ -62,7 +66,16 @@ int main(void) {
     new_game(&game, &map, &snake);
   }
 
+  // Update the program at two different speeds, the graphic is drawn 60 times
+  // a second, while the game updates at a different rate based on difficulty.
+  static const long long display_interval = SECOND / 60;
+  static const long long logic_update_interval[] = {SECOND / 12, SECOND / 12,
+                                                    SECOND / 20, SECOND / 30};
+  long long last_logic_time = 0, current_time;
+
   while (!game.quit) { // Main loop
+    current_time = time_ns();
+
     switch (getch()) {
     case 'w':
     case 'k':
@@ -88,50 +101,57 @@ int main(void) {
       game.quit = true;
     }
 
-    if (game.pre_game) {
-      game.pre_game = false;
-      erase_line(map->offset.y + map->height + 2); // Hide tooltip below the map
-      nonblocking_input(true);
-    }
+    const long long logic_interval =
+        game.difficulty == INCREMENTAL
+            ? logic_update_interval[EASY] -
+                  logic_update_interval[HARD] * game.progress
+            : logic_update_interval[game.difficulty];
 
-    if (snake->head.x == map->apple.x && snake->head.y == map->apple.y) {
-      snake->growing = true;
-      ++snake->length;
-      spawn_apple(map);
-      update_score(map, snake->length);
-      game.progress = (snake->length + .0) / map->area;
-      if (snake->length == map->area) {
-        if (!(game.quit = win_dialog(map, &game.difficulty, snake->length))) {
-          new_game(&game, &map, &snake);
+    if (current_time - last_logic_time >= logic_interval) {
+      if (game.pre_game) {
+        game.pre_game = false;
+        erase_line(map->offset.y + map->height + 2); // Hide tooltip below map
+        nonblocking_input(true);
+      }
+
+      if (snake->head.x == map->apple.x && snake->head.y == map->apple.y) {
+        snake->growing = true;
+        ++snake->length;
+        spawn_apple(map);
+        update_score(map, snake->length);
+        game.progress = (snake->length + .0) / map->area;
+        if (snake->length == map->area) {
+          if (!(game.quit = win_dialog(map, &game.difficulty, snake->length))) {
+            new_game(&game, &map, &snake);
+          }
         }
       }
+
+      advance(snake);
+
+      // Game over after collision
+      if ((game.wall_collision = !is_inside(map, snake))) {
+        set_color(RED);
+        draw_point(map, snake->length > 1 ? snake->body[snake->length - 2]
+                                          : snake->old_tail);
+      } else {
+        redraw_snake(map, snake);
+      }
+      if ((game.self_collision = self_collision(snake))) {
+        set_color(RED);
+        draw_point(map, snake->head);
+      }
+      if ((game.wall_collision || game.self_collision) &&
+          !(game.quit = over_dialog(map, &game.difficulty, snake->length))) {
+        new_game(&game, &map, &snake);
+      }
+      last_logic_time = current_time;
     }
 
-    advance(snake);
-
-    // Game over after collision
-    if ((game.wall_collision = !is_inside(map, snake))) {
-      set_color(RED);
-      draw_point(map, snake->length > 1 ? snake->body[snake->length - 2]
-                                        : snake->old_tail);
-    } else {
-      redraw_snake(map, snake);
-    }
-    if ((game.self_collision = self_collision(snake))) {
-      set_color(RED);
-      draw_point(map, snake->head);
-    }
-    if ((game.wall_collision || game.self_collision) &&
-        !(game.quit = over_dialog(map, &game.difficulty, snake->length))) {
-      new_game(&game, &map, &snake);
-    }
-
-    if (game.difficulty == INCREMENTAL) {
-      const struct timespec sleep = {
-          0, delay[EASY].tv_nsec - delay[HARD].tv_nsec * game.progress};
-      nanosleep(&sleep, NULL);
-    } else {
-      nanosleep(&delay[game.difficulty], NULL);
+    const long long time_left = display_interval - time_ns() - current_time;
+    if (time_left > 0) {
+      nanosleep(&(struct timespec){time_left / SECOND, time_left % SECOND},
+                NULL);
     }
   }
 
