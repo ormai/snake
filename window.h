@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright © 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.me
 
 #ifndef WINDOW_H
 #define WINDOW_H
