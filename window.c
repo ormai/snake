@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright © 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.me
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -122,7 +122,7 @@ bool welcome_dialog(enum difficulty *difficulty) {
       "             |___/_| |_|\\__,_|_|\\_\\___(_)___|",
       "",
       "",
-      "          by Mario D'Andrea <https://ormai.dev>",
+      "          by Mario D'Andrea <https://ormai.me>",
       "",
       "              Difficulty %s",
       "",

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright © 2024  Mario D'Andrea https://ormai.dev
+// Copyright © 2024  Mario D'Andrea https://ormai.me
 
 // This header and the accompanying term.c provide a subset of the features of
 // ncurses. This is accomplished by relying on the POSIX interface for the
