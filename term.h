@@ -11,12 +11,11 @@
 #ifndef TERM_H
 #define TERM_H
 
-#include <stdbool.h>
 #include <sys/ioctl.h>
 
 #define ESC '\033'
 /// Control Sequence Introducer
-#define CSI "\033[" 
+#define CSI "\033["
 
 enum color {
   BLACK = 30,
@@ -52,15 +51,17 @@ void term_init(void);
 void term_finalize(void);
 
 /// Gets the current pressed key, if any.
-/// 
+///
 /// Terminals treat the arrow keys as escape sequences up: `^[[A`, down: `^[[B`,
 /// right: `^[[C`, left: `^[[D`; where `^[` is `ESC`.
-/// This can be seen by launching `cat` without a file and pressing the arrow keys.
-/// This function is just a wrapper around `getchar` to detect the arrow keys.
-int getch(void);
+/// This can be seen by launching `cat` without a file and pressing the arrow
+/// keys. This function is just a wrapper around `getchar` to detect the arrow
+/// keys.
+[[nodiscard]] int getch(void);
 
-/// Returns the terminal size in rows and cols inside the POSIX `struct winsize`.
-struct winsize get_term_size(void);
+/// Returns the terminal size in rows and cols inside the POSIX `struct
+/// winsize`.
+[[nodiscard]] struct winsize get_term_size(void);
 
 /// Toggles non blocking mode for standard input.
 void nonblocking_input(const bool enabled);
@@ -75,7 +76,7 @@ void erase(void);
 void erase_line(const int y);
 
 /// Prints a formatted string at line `y` and column `x`.
-/// 
+///
 /// For multi byte characters to work an appropriate locale must be set.
 void print(int y, int x, const char *fmt, ...);
 

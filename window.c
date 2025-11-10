@@ -4,7 +4,6 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include <time.h>
@@ -73,21 +72,21 @@ static inline void update_doodle(struct snake *doodle,
       break;
     }
     doodle->direction = LEFT;
-    // fallthrough
+    [[fallthrough]];
   case LEFT:
     if (doodle->head.x > dialog_begin.x) {
       doodle->head.x -= 2;
       break;
     }
     doodle->direction = DOWN;
-    // fallthrough
+    [[fallthrough]];
   case DOWN:
     if (doodle->head.y - 1 < dialog_begin.y + dialog_height) {
       ++doodle->head.y;
       break;
     }
     doodle->direction = RIGHT;
-    // fallthrough
+    [[fallthrough]];
   case RIGHT:
     if (doodle->head.x < dialog_begin.x + dialog_width - 1) {
       doodle->head.x += 2;
@@ -105,7 +104,7 @@ static inline void update_doodle(struct snake *doodle,
     print(pre_head.y, pre_head.x, "██");
   }
   print(doodle->old_tail.y, doodle->old_tail.x, "  ");
-  nanosleep(&(struct timespec){0, 33333333}, NULL);
+  nanosleep(&(struct timespec){0, 33'333'333}, nullptr);
 }
 
 static const char *diff[] = {"  incremental >", "   < easy >    ",

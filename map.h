@@ -23,7 +23,7 @@ struct map {
 };
 
 /// Creates a new map. This function allocates memory.
-struct map *map_create(void);
+[[nodiscard]] struct map *map_create(void);
 
 /// Destroys a map created with `map_create`.
 void map_destroy(struct map *map);

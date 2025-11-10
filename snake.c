@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright © 2024  Mario D'Andrea https://ormai.me
 
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,10 +18,12 @@ struct snake *snake_create(const struct point head, const size_t size) {
 }
 
 void snake_destroy(struct snake *snake) {
-  if (snake != NULL) {
-    free(snake->body);
+  if (snake != nullptr) {
+    if (snake->body != nullptr) {
+      free(snake->body);
+    }
     free(snake);
-    snake = NULL;
+    snake = nullptr;
   }
 }
 

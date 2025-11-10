@@ -4,7 +4,6 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <locale.h>
-#include <stdbool.h>
 #include <threads.h>
 #include <time.h>
 
@@ -13,7 +12,7 @@
 #include "term.h"
 #include "window.h"
 
-#define SECOND_IN_NANOSECOND 1000000000LL
+#define SECOND_IN_NANOSECOND 1'000'000'000LL
 
 struct game_state {
   /// Game progress, expressed as the length of the snake, which is equal to
@@ -57,7 +56,7 @@ static void new_game(struct game_state *game, struct map **m,
 }
 
 /// Returns the current time in nanoseconds.
-static long long time_ns(void) {
+[[nodiscard]] static long long time_ns(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return ts.tv_sec * SECOND_IN_NANOSECOND + ts.tv_nsec;
@@ -67,9 +66,9 @@ int main(void) {
   setlocale(LC_ALL, "");
   term_init();
 
-  struct map *map = NULL;
-  struct snake *snake = NULL;
-  struct game_state game = {0, false, false, false, true, INCREMENTAL};
+  struct map *map = nullptr;
+  struct snake *snake = nullptr;
+  struct game_state game = {.pre_game = true, .difficulty = INCREMENTAL};
   if (!(game.quit = welcome_dialog(&game.difficulty))) {
     new_game(&game, &map, &snake);
   }
@@ -77,8 +76,9 @@ int main(void) {
   // Update the program at two different speeds, the graphic is drawn 60 times
   // a second, while the game updates at a different rate based on difficulty.
   static const long long display_interval = SECOND_IN_NANOSECOND / 60;
-  static const long long logic_update_interval[] = {SECOND_IN_NANOSECOND / 12, SECOND_IN_NANOSECOND / 12,
-                                                    SECOND_IN_NANOSECOND / 20, SECOND_IN_NANOSECOND / 30};
+  static const long long logic_update_interval[] = {
+      SECOND_IN_NANOSECOND / 12, SECOND_IN_NANOSECOND / 12,
+      SECOND_IN_NANOSECOND / 20, SECOND_IN_NANOSECOND / 30};
   long long last_logic_time = 0, current_time;
 
   while (!game.quit) { // Main loop
@@ -158,8 +158,9 @@ int main(void) {
 
     const long long time_left = display_interval - time_ns() - current_time;
     if (time_left > 0) {
-      nanosleep(&(struct timespec){time_left / SECOND_IN_NANOSECOND, time_left % SECOND_IN_NANOSECOND},
-                NULL);
+      nanosleep(&(struct timespec){time_left / SECOND_IN_NANOSECOND,
+                                   time_left % SECOND_IN_NANOSECOND},
+                nullptr);
     }
   }
 

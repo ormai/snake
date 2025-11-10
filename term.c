@@ -3,7 +3,6 @@
 
 #include <fcntl.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <termios.h>

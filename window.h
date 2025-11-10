@@ -4,7 +4,6 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <stdbool.h>
 #include <sys/ioctl.h>
 
 #include "map.h"
@@ -43,7 +42,7 @@ bool over_dialog(const struct map *map, enum difficulty *difficulty,
                  const size_t score);
 
 /// Shows the end game win dialog. Returns true if the user wants to quit.
-bool win_dialog(const struct map *map, enum difficulty *difficulty,
-                const size_t score);
+[[nodiscard]] bool win_dialog(const struct map *map,
+                              enum difficulty *difficulty, const size_t score);
 
 #endif // WINDOW_H

@@ -28,15 +28,15 @@ struct map *map_create(void) {
 }
 
 void map_destroy(struct map *map) {
-  if (map != NULL) {
-    if (map->grid != NULL) {
+  if (map != nullptr) {
+    if (map->grid != nullptr) {
       for (int i = 0; i <= map->height; ++i) {
         free(map->grid[i]);
       }
       free(map->grid);
     }
     free(map);
-    map = NULL;
+    map = nullptr;
   }
 }
 
