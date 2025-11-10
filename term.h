@@ -15,7 +15,8 @@
 #include <sys/ioctl.h>
 
 #define ESC '\033'
-#define CSI "\033[" // Control Sequence Introducer
+/// Control Sequence Introducer
+#define CSI "\033[" 
 
 enum color {
   BLACK = 30,
@@ -44,35 +45,38 @@ enum arrow_key {
   ARROW_LEFT
 };
 
-// Makes changes to the terminal
+/// Initializes the terminal, stores the current terminal state for later.
 void term_init(void);
 
-// Restores the terminal behavior and its previous state
+/// Restores the terminal behavior and its previous state.
 void term_finalize(void);
 
-// Terminals treat the arrow keys as escape sequences
-// up: ^[[A, down: ^[[B, right: ^[[C, left: ^[[D; where ^[ is ESC.
-// This can be seen by launching cat without a file and pressing the arrow keys.
-// This function is just a wrapper around getchar that detects the arrow keys.
+/// Gets the current pressed key, if any.
+/// 
+/// Terminals treat the arrow keys as escape sequences up: `^[[A`, down: `^[[B`,
+/// right: `^[[C`, left: `^[[D`; where `^[` is `ESC`.
+/// This can be seen by launching `cat` without a file and pressing the arrow keys.
+/// This function is just a wrapper around `getchar` to detect the arrow keys.
 int getch(void);
 
-// Returns the terminal size in rows and cols inside the struct winsize
+/// Returns the terminal size in rows and cols inside the POSIX `struct winsize`.
 struct winsize get_term_size(void);
 
-// Enable/disable non blocking mode for standard input
+/// Toggles non blocking mode for standard input.
 void nonblocking_input(const bool enabled);
 
-// Sets the foreground color for standard output
+/// Sets the foreground color for standard output.
 void set_color(const enum color color);
 
-// Erase everything on the terminal, like 'clear' in the command line
+/// Erases everything on the terminal, like `clear` on the command line.
 void erase(void);
 
-// Erase the y-th line in the terminal
+/// Erases the `y`-th line terminal line.
 void erase_line(const int y);
 
-// Print a formatted string at line y and column x.
-// For multi byte characters to work an appropriate locale must be set.
+/// Prints a formatted string at line `y` and column `x`.
+/// 
+/// For multi byte characters to work an appropriate locale must be set.
 void print(int y, int x, const char *fmt, ...);
 
 #endif // TERM_H

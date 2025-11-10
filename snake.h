@@ -9,29 +9,39 @@
 
 enum direction { UP, RIGHT, DOWN, LEFT };
 
-// Coordinates from the top left corner of the map
+/// Coordinate from the top left corner of the map.
 struct point {
   int x, y;
 };
 
 struct snake {
-  size_t length;         // Also the score
-  struct point old_tail; // Previous position of the tail
+  /// The lengh of the snake is also the score of the game.
+  size_t length;
+  /// Previous tail position.
+  struct point old_tail;
+  /// Whether the snake is growing in the current game tick.
   bool growing;
+  /// Direction in which the head of the snake is pointing.
   enum direction direction;
-  struct point head; // would be body[length - 1], for easy access
+  /// Head of the snake. Equivanent to `body[length - 1]`.
+  struct point head;
+  /// Body of the snake, consisting of an array of points.
   struct point *body;
 };
 
-struct snake *snake_create(const struct point head, const size_t size);
+/// Creates a new snake. This function allocats memory.
+[[nodiscard]] struct snake *snake_create(const struct point head, const size_t size);
+
+/// Destroys a snake created with `snake_create`.
 void snake_destroy(struct snake *self);
 
-// Move the snake one cell forward in the current direction
+/// Moves the snake one cell forward in the current direction.
 void advance(struct snake *self);
 
+/// Updates the direction of the snake.
 void change_direction(struct snake *self, const enum direction direction);
 
-// Check whether the snake's head overlaps with any other point of its body
-bool self_collision(const struct snake *snake);
+/// Checks whether the snake's head overlaps with any other point of its body.
+bool self_collision(const struct snake *self);
 
 #endif // SNAKE_H

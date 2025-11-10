@@ -13,8 +13,8 @@
 #include "term.h"
 #include "window.h"
 
-// Translate an x coordinate to display on the map. Two cells represent one
-// point: "██". Eg. x = 4 maps to the 9th actual terminal column.
+/// Translates an x coordinate to display on the map. Two cells represent one
+/// point: "██". Eg. x = 4 maps to the 9th actual terminal column.
 static int translate(const int x) { return x + x + 1; }
 
 void draw_point(const struct map *map, const struct point position) {

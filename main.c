@@ -13,16 +13,24 @@
 #include "term.h"
 #include "window.h"
 
-#define SECOND 1000000000LL // a second in nanoseconds
+#define SECOND_IN_NANOSECOND 1000000000LL
 
 struct game_state {
+  /// Game progress, expressed as the length of the snake, which is equal to
+  /// the current score, over the number of cells in the map.
   float progress;
-  bool wall_collision, self_collision;
+  /// Wheter the snake hit a wall.
+  bool wall_collision;
+  /// Whether the snake head touched its own body.
+  bool self_collision;
+  /// Whether the user wants to close the game.
   bool quit;
-  bool pre_game; // The game waits for the first input of the player
+  /// The game waits for the first input of the player.
+  bool pre_game;
   enum difficulty difficulty;
 };
 
+/// Initializes a new game. Can be used to reset the game.
 static void new_game(struct game_state *game, struct map **m,
                      struct snake **s) {
   struct map *map = *m;
@@ -48,11 +56,11 @@ static void new_game(struct game_state *game, struct map **m,
   game->progress = 0;
 }
 
-/// Return the current time in nanoseconds.
+/// Returns the current time in nanoseconds.
 static long long time_ns(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * SECOND + ts.tv_nsec;
+  return ts.tv_sec * SECOND_IN_NANOSECOND + ts.tv_nsec;
 }
 
 int main(void) {
@@ -68,9 +76,9 @@ int main(void) {
 
   // Update the program at two different speeds, the graphic is drawn 60 times
   // a second, while the game updates at a different rate based on difficulty.
-  static const long long display_interval = SECOND / 60;
-  static const long long logic_update_interval[] = {SECOND / 12, SECOND / 12,
-                                                    SECOND / 20, SECOND / 30};
+  static const long long display_interval = SECOND_IN_NANOSECOND / 60;
+  static const long long logic_update_interval[] = {SECOND_IN_NANOSECOND / 12, SECOND_IN_NANOSECOND / 12,
+                                                    SECOND_IN_NANOSECOND / 20, SECOND_IN_NANOSECOND / 30};
   long long last_logic_time = 0, current_time;
 
   while (!game.quit) { // Main loop
@@ -150,7 +158,7 @@ int main(void) {
 
     const long long time_left = display_interval - time_ns() - current_time;
     if (time_left > 0) {
-      nanosleep(&(struct timespec){time_left / SECOND, time_left % SECOND},
+      nanosleep(&(struct timespec){time_left / SECOND_IN_NANOSECOND, time_left % SECOND_IN_NANOSECOND},
                 NULL);
     }
   }

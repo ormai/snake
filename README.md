@@ -1,8 +1,12 @@
-The [snake](https://en.wikipedia.org/wiki/Snake_(1998_video_game)) game written in C for the terminal. The project is small[^1] and doesn't rely on external dependencies.
+# Snake
+
+The [snake](https://en.wikipedia.org/wiki/Snake_(1998_video_game)) game written in C for the terminal.
+
+This is a small[^1] project which doesn't rely on external dependencies.
 
 ![demo](demo.gif)
 
-To build the code `git`, `make`, and `clang` or `gcc` are required.
+To build the game `git`, `make`, and `clang` or `gcc` are required.
 
 Build instructions:
 
